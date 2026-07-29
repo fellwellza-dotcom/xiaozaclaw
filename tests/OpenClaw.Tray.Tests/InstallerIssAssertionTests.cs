@@ -49,13 +49,14 @@ public sealed class InstallerIssAssertionTests
         Assert.Contains(@"#define MyAppAumid ""OpenClaw.Companion""", iss);
         Assert.Contains(@"#define MyCompression ""lzma""", iss);
         Assert.Contains(@"#define MySolidCompression ""yes""", iss);
-        Assert.Contains("OutputBaseFilename=OpenClawCompanion{#MyOutputSuffix}-Setup-{#MyAppArch}", iss);
+        Assert.Contains(@"#define MyOutputBaseFilename ""OpenClawCompanion""", iss);
+        Assert.Contains("OutputBaseFilename={#MyOutputBaseFilename}{#MyOutputSuffix}-Setup-{#MyAppArch}", iss);
         foreach (var iconEntry in new[]
         {
             @"Name: ""{group}\{#MyAppName}""; Filename: ""{app}\{#MyAppExeName}""; AppUserModelID: ""{#MyAppAumid}""",
-            @"Name: ""{group}\OpenClaw Gateway Setup""; Filename: ""{app}\{#MyAppExeName}""; Parameters: ""{#MyProtocol}://setup""; IconFilename: ""{app}\{#MyAppExeName}""; AppUserModelID: ""{#MyAppAumid}""",
-            @"Name: ""{group}\OpenClaw Companion Settings""; Filename: ""{app}\{#MyAppExeName}""; Parameters: ""{#MyProtocol}://commandcenter""; IconFilename: ""{app}\{#MyAppExeName}""; AppUserModelID: ""{#MyAppAumid}""",
-            @"Name: ""{group}\OpenClaw Chat""; Filename: ""{app}\{#MyAppExeName}""; Parameters: ""{#MyProtocol}://chat""; IconFilename: ""{app}\{#MyAppExeName}""; AppUserModelID: ""{#MyAppAumid}""",
+            @"Name: ""{group}\{#MyGatewayShortcut}""; Filename: ""{app}\{#MyAppExeName}""; Parameters: ""{#MyProtocol}://setup""; IconFilename: ""{app}\{#MyAppExeName}""; AppUserModelID: ""{#MyAppAumid}""",
+            @"Name: ""{group}\{#MySettingsShortcut}""; Filename: ""{app}\{#MyAppExeName}""; Parameters: ""{#MyProtocol}://commandcenter""; IconFilename: ""{app}\{#MyAppExeName}""; AppUserModelID: ""{#MyAppAumid}""",
+            @"Name: ""{group}\{#MyChatShortcut}""; Filename: ""{app}\{#MyAppExeName}""; Parameters: ""{#MyProtocol}://chat""; IconFilename: ""{app}\{#MyAppExeName}""; AppUserModelID: ""{#MyAppAumid}""",
             @"Name: ""{group}\Check for Updates""; Filename: ""{app}\{#MyAppExeName}""; Parameters: ""{#MyProtocol}://check-updates""; IconFilename: ""{app}\{#MyAppExeName}""; AppUserModelID: ""{#MyAppAumid}""",
             @"Name: ""{autodesktop}\{#MyAppName}""; Filename: ""{app}\{#MyAppExeName}""; Tasks: desktopicon; AppUserModelID: ""{#MyAppAumid}""",
             @"Name: ""{userstartup}\{#MyAppName}""; Filename: ""{app}\{#MyAppExeName}""; Tasks: startupicon; AppUserModelID: ""{#MyAppAumid}"""
@@ -64,6 +65,22 @@ public sealed class InstallerIssAssertionTests
             Assert.Contains(iconEntry, iss);
         }
         Assert.DoesNotContain("AppUserModelID: \"OpenClaw.Tray.WinUI\"", iss);
+    }
+
+    [Fact]
+    public void XiaozaInstaller_UsesIndependentIdentityAndProtocol()
+    {
+        var iss = File.ReadAllText(Path.Combine(TestRepositoryPaths.GetRepositoryRoot(), "installer.iss"));
+
+        Assert.Contains("#ifdef XiaozaBuild", iss);
+        Assert.Contains(@"#define MyAppName ""xiaozaclaw""", iss);
+        Assert.Contains(@"#define MyAppAumid ""xiaozaclaw.Desktop""", iss);
+        Assert.Contains(@"#define MyInstallDir ""xiaozaclaw""", iss);
+        Assert.Contains(@"#define MyMutex ""xiaozaclaw""", iss);
+        Assert.Contains(@"#define MyProtocol ""xiaozaclaw""", iss);
+        Assert.Contains(@"#define MyDistroName ""xiaozaclawGateway""", iss);
+        Assert.Contains(@"#define MyOutputBaseFilename ""xiaozaclaw""", iss);
+        Assert.Contains(@"#define MyAppPublisher ""xiaozaclaw Project""", iss);
     }
 
     [Fact]

@@ -416,8 +416,8 @@ public sealed class AppRefactorContractTests
             "await contextApplyTask",
             "_setupLock?.Dispose()");
         Assert.Contains("distroNameOverride: _config.DistroName", wizardPage);
-        Assert.Contains("if (AppIdentity.IsDev)", updateCoordinator);
-        Assert.Contains("Skipping release-channel update check in development build", updateCoordinator);
+        Assert.Contains("if (AppIdentity.IsDev || AppIdentity.IsXiaozaClaw)", updateCoordinator);
+        Assert.Contains("Skipping OpenClaw release-channel update check", updateCoordinator);
         Assert.Contains("\"Update_Message_Skipped_Dev\"", updateCoordinator);
         Assert.Contains("\"--data-dir\", AppIdentity.ResolveRoamingDataDirectory()", cliUninstall);
         Assert.Contains("\"--local-data-dir\", AppIdentity.ResolveSetupLocalDataDirectory()", cliUninstall);

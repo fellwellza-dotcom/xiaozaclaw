@@ -17,16 +17,26 @@
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
+  <!-- xiaozaclaw product build: keeps its Windows identity and data isolated
+       while preserving the upstream release/dev identities for clean rebases. -->
+  <PropertyGroup Condition="'$(XiaozaBuild)' == 'true'">
+    <DefineConstants>$(DefineConstants);XIAOZACLAW_BUILD</DefineConstants>
+    <AppIdentityMarker>xiaozaclaw</AppIdentityMarker>
+    <AssemblyTitle>xiaozaclaw</AssemblyTitle>
+    <FileDescription>xiaozaclaw</FileDescription>
+    <Product>xiaozaclaw</Product>
+  </PropertyGroup>
+
   <!-- Dev build identity: allows side-by-side installation with Release.
        Set DevBuild=true explicitly; release identity remains the default for every configuration. -->
-  <PropertyGroup Condition="'$(DevBuild)' == 'true'">
+  <PropertyGroup Condition="'$(DevBuild)' == 'true' and '$(XiaozaBuild)' != 'true'">
     <DefineConstants>$(DefineConstants);DEV_BUILD</DefineConstants>
     <AppIdentityMarker>dev</AppIdentityMarker>
     <AssemblyTitle>OpenClaw Companion (Dev)</AssemblyTitle>
     <FileDescription>OpenClaw Companion (Dev)</FileDescription>
     <Product>OpenClaw Companion (Dev)</Product>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(DevBuild)' != 'true'">
+  <PropertyGroup Condition="'$(DevBuild)' != 'true' and '$(XiaozaBuild)' != 'true'">
     <AppIdentityMarker>release</AppIdentityMarker>
   </PropertyGroup>
 
@@ -42,7 +52,8 @@
   <PropertyGroup Condition="'$(PackageMsix)' != 'true'">
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationManifest Condition="'$(XiaozaBuild)' == 'true'">xiaozaclaw.app.manifest</ApplicationManifest>
+    <ApplicationManifest Condition="'$(XiaozaBuild)' != 'true'">app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <!-- MSIX packaged: enables camera/mic consent prompts, package identity -->
@@ -201,16 +212,23 @@
       <_AppxManifestVersion Condition="'$(_VersionDotCount)' == '2'">$(_StrippedVersion).0</_AppxManifestVersion>
       <_AppxManifestVersion Condition="'$(_VersionDotCount)' == '1'">$(_StrippedVersion).0.0</_AppxManifestVersion>
       <_GeneratedAppxManifestPath>$(IntermediateOutputPath)openclaw.Package.appxmanifest</_GeneratedAppxManifestPath>
+      <_UseAlternateAppxIdentity Condition="'$(DevBuild)' == 'true' or '$(XiaozaBuild)' == 'true'">true</_UseAlternateAppxIdentity>
+      <_AlternateIdentityName Condition="'$(XiaozaBuild)' == 'true'">xiaozaclaw.Desktop</_AlternateIdentityName>
+      <_AlternateIdentityName Condition="'$(XiaozaBuild)' != 'true'">OpenClaw.Companion.Dev</_AlternateIdentityName>
+      <_AlternateDisplayName Condition="'$(XiaozaBuild)' == 'true'">xiaozaclaw</_AlternateDisplayName>
+      <_AlternateDisplayName Condition="'$(XiaozaBuild)' != 'true'">OpenClaw Companion (Dev)</_AlternateDisplayName>
+      <_AlternateProtocolName Condition="'$(XiaozaBuild)' == 'true'">xiaozaclaw</_AlternateProtocolName>
+      <_AlternateProtocolName Condition="'$(XiaozaBuild)' != 'true'">openclaw-dev</_AlternateProtocolName>
     </PropertyGroup>
     <Error Text="Cannot derive four-part MSIX version from $(Version). Use X.Y or X.Y.Z with an optional suffix." Condition="'$(_AppxManifestVersion)' == ''" />
     <GenerateOpenClawAppxManifest
       SourceManifestPath="$(MSBuildThisFileDirectory)Package.appxmanifest"
       OutputManifestPath="$(_GeneratedAppxManifestPath)"
       FourPartVersion="$(_AppxManifestVersion)"
-      DevBuild="$(DevBuild)"
-      IdentityName="OpenClaw.Companion.Dev"
-      DisplayName="OpenClaw Companion (Dev)"
-      ProtocolName="openclaw-dev" />
+      DevBuild="$(_UseAlternateAppxIdentity)"
+      IdentityName="$(_AlternateIdentityName)"
+      DisplayName="$(_AlternateDisplayName)"
+      ProtocolName="$(_AlternateProtocolName)" />
     <ItemGroup>
       <AppxManifest Remove="@(AppxManifest)" />
       <AppxManifest Include="$(_GeneratedAppxManifestPath)">

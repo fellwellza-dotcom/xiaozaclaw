@@ -12,6 +12,7 @@
     Use -Isolated (or -DataDir) to avoid sharing settings, logs, run markers,
     and device identities. Use -Dev to opt into the side-by-side dev app
     identity with separate mutex, protocol, gateway distro, and gateway port.
+    Use -Xiaoza for the independently branded xiaozaclaw identity.
 
     By default this helper refuses to run outside `main` to avoid accidentally
     launching a stale or experimental worktree. Use -AllowNonMain when you
@@ -26,6 +27,9 @@
 .PARAMETER Dev
     Build and launch with the side-by-side dev app identity. Defaults off so
     release identity remains the default local-launch behavior.
+
+.PARAMETER Xiaoza
+    Build and launch the xiaozaclaw product identity.
 
 .PARAMETER AllowNonMain
     Allow launching from a branch other than main.
@@ -82,6 +86,8 @@ param(
 
     [switch]$Dev,
 
+    [switch]$Xiaoza,
+
     [switch]$AllowNonMain,
 
     [switch]$Isolated,
@@ -101,6 +107,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($Dev -and $Xiaoza) {
+    throw "Dev and Xiaoza are mutually exclusive."
+}
 
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $repoRoot
@@ -148,6 +158,9 @@ if (-not $NoBuild) {
     if ($Dev) {
         $buildArgs["DevBuild"] = $true
     }
+    if ($Xiaoza) {
+        $buildArgs["XiaozaBuild"] = $true
+    }
 
     & "$repoRoot\build.ps1" @buildArgs
     if ($LASTEXITCODE -ne 0) {
@@ -174,7 +187,18 @@ $runtimeIdentifier = switch ($architecture) {
     "ARM64" { "win-arm64" }
     default { "win-x64" }
 }
-$outputDir = Join-Path $repoRoot "src\OpenClaw.Tray.WinUI\bin\$Configuration\$targetFramework\$runtimeIdentifier"
+$platform = switch ($architecture) {
+    "ARM64" { "ARM64" }
+    default { "x64" }
+}
+$outputCandidates = @(
+    (Join-Path $repoRoot "src\OpenClaw.Tray.WinUI\bin\$Configuration\$targetFramework\$runtimeIdentifier"),
+    (Join-Path $repoRoot "src\OpenClaw.Tray.WinUI\bin\$platform\$Configuration\$targetFramework\$runtimeIdentifier")
+)
+$outputDir = $outputCandidates | Where-Object { Test-Path (Join-Path $_ "app-identity.txt") } | Select-Object -First 1
+if (-not $outputDir) {
+    $outputDir = $outputCandidates[0]
+}
 $exePath = Join-Path $outputDir "OpenClaw.Tray.WinUI.exe"
 $identityMarkerPath = Join-Path $outputDir "app-identity.txt"
 
@@ -188,10 +212,10 @@ if (-not (Test-Path $identityMarkerPath)) {
     throw "App identity marker not found: $identityMarkerPath. Run without -NoBuild first."
 }
 
-$expectedIdentity = if ($Dev) { "dev" } else { "release" }
+$expectedIdentity = if ($Xiaoza) { "xiaozaclaw" } elseif ($Dev) { "dev" } else { "release" }
 $actualIdentity = (Get-Content -LiteralPath $identityMarkerPath -Raw -Encoding UTF8).Trim()
 if ($actualIdentity -ne $expectedIdentity) {
-    throw "Build output identity '$actualIdentity' does not match requested '$expectedIdentity'. Run without -NoBuild or choose the matching -Dev option."
+    throw "Build output identity '$actualIdentity' does not match requested '$expectedIdentity'. Run without -NoBuild or choose the matching -Dev/-Xiaoza option."
 }
 
 $winapp = $null
@@ -237,10 +261,11 @@ try {
         }
     }
 
-    Write-Host "Launching OpenClaw Tray" -ForegroundColor Cyan
+    $productName = if ($Xiaoza) { "xiaozaclaw" } else { "OpenClaw Tray" }
+    Write-Host "Launching $productName" -ForegroundColor Cyan
     Write-Host "  Branch:        $branch"
     Write-Host "  Configuration: $Configuration"
-    Write-Host "  Identity:      $(if ($actualIdentity -eq 'dev') { 'Dev (opt-in)' } else { 'Release (default)' })"
+    Write-Host "  Identity:      $actualIdentity"
     Write-Host "  Runtime:       $runtimeIdentifier"
     Write-Host "  Output:        $outputDir"
     Write-Host "  Mode:          $(if ($UseWinApp) { 'WinAppCLI manifest activation' } else { 'Direct unpackaged executable' })"
@@ -269,8 +294,8 @@ try {
         $exitCode = $process.ExitCode
     } else {
         $process = Start-Process -FilePath $exePath -WorkingDirectory $outputDir -PassThru
-        Write-Host "Started OpenClaw Tray (PID: $($process.Id))" -ForegroundColor Green
-        Write-Host "Hint: Look for the 🦞 OpenClaw tray icon in the system tray (bottom-right). It may be hidden under the ^ button." -ForegroundColor Cyan
+        Write-Host "Started $productName (PID: $($process.Id))" -ForegroundColor Green
+        Write-Host "Hint: Look for the $productName tray icon in the system tray (bottom-right). It may be hidden under the ^ button." -ForegroundColor Cyan
         $exitCode = 0
     }
 } finally {

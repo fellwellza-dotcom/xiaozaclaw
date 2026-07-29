@@ -1,29 +1,52 @@
-; OpenClaw Companion Inno Setup Script (WinUI version)
-; Pass /DDevBuild=1 to produce a side-by-side dev installer.
-#ifdef DevBuild
-  #define MyAppName "OpenClaw Companion (Dev)"
-  #define MyAppAumid "OpenClaw.Companion.Dev"
-  #define MyAppId "{{M0LTB0T-TRAY-4PP1-DEV}"
-  #define MyInstallDir "OpenClawTray-Dev"
-  #define MyMutex "OpenClawTray-Dev"
-  #define MyAutoStartName "OpenClawTray-Dev"
-  #define MyStartupTaskName "OpenClaw Companion (Dev)"
-  #define MyDistroName "OpenClawGateway-Dev"
-  #define MyProtocol "openclaw-dev"
-  #define MyOutputSuffix "-Dev"
-#else
-  #define MyAppName "OpenClaw Companion"
-  #define MyAppAumid "OpenClaw.Companion"
-  #define MyAppId "{{M0LTB0T-TRAY-4PP1-D3N7}"
-  #define MyInstallDir "OpenClawTray"
-  #define MyMutex "OpenClawTray"
-  #define MyAutoStartName "OpenClawTray"
-  #define MyStartupTaskName "OpenClaw Companion"
-  #define MyDistroName "OpenClawGateway"
-  #define MyProtocol "openclaw"
+; OpenClaw Companion / xiaozaclaw Inno Setup Script (WinUI version)
+; Pass /DXiaozaBuild=1 for the independently branded product installer.
+#ifdef XiaozaBuild
+  #define MyAppName "xiaozaclaw"
+  #define MyAppAumid "xiaozaclaw.Desktop"
+  #define MyAppId "{{72A03988-40D9-44B1-9B7B-94B63C4B7988}"
+  #define MyInstallDir "xiaozaclaw"
+  #define MyMutex "xiaozaclaw"
+  #define MyAutoStartName "xiaozaclaw"
+  #define MyStartupTaskName "xiaozaclaw"
+  #define MyDistroName "xiaozaclawGateway"
+  #define MyProtocol "xiaozaclaw"
+  #define MyOutputBaseFilename "xiaozaclaw"
   #define MyOutputSuffix ""
+  #define MyAppPublisher "xiaozaclaw Project"
+  #define MyGatewayShortcut "xiaozaclaw Gateway Setup"
+  #define MySettingsShortcut "xiaozaclaw Settings"
+  #define MyChatShortcut "xiaozaclaw Chat"
+#else
+  ; Pass /DDevBuild=1 to produce a side-by-side upstream dev installer.
+  #ifdef DevBuild
+    #define MyAppName "OpenClaw Companion (Dev)"
+    #define MyAppAumid "OpenClaw.Companion.Dev"
+    #define MyAppId "{{M0LTB0T-TRAY-4PP1-DEV}"
+    #define MyInstallDir "OpenClawTray-Dev"
+    #define MyMutex "OpenClawTray-Dev"
+    #define MyAutoStartName "OpenClawTray-Dev"
+    #define MyStartupTaskName "OpenClaw Companion (Dev)"
+    #define MyDistroName "OpenClawGateway-Dev"
+    #define MyProtocol "openclaw-dev"
+    #define MyOutputSuffix "-Dev"
+  #else
+    #define MyAppName "OpenClaw Companion"
+    #define MyAppAumid "OpenClaw.Companion"
+    #define MyAppId "{{M0LTB0T-TRAY-4PP1-D3N7}"
+    #define MyInstallDir "OpenClawTray"
+    #define MyMutex "OpenClawTray"
+    #define MyAutoStartName "OpenClawTray"
+    #define MyStartupTaskName "OpenClaw Companion"
+    #define MyDistroName "OpenClawGateway"
+    #define MyProtocol "openclaw"
+    #define MyOutputSuffix ""
+  #endif
+  #define MyOutputBaseFilename "OpenClawCompanion"
+  #define MyAppPublisher "OpenClaw Foundation"
+  #define MyGatewayShortcut "OpenClaw Gateway Setup"
+  #define MySettingsShortcut "OpenClaw Companion Settings"
+  #define MyChatShortcut "OpenClaw Chat"
 #endif
-#define MyAppPublisher "OpenClaw Foundation"
 #define MyAppURL "https://github.com/openclaw/openclaw-windows-node"
 #define MyAppExeName "OpenClaw.Tray.WinUI.exe"
 
@@ -53,7 +76,7 @@ AppUpdatesURL=https://github.com/openclaw/openclaw-windows-node/releases
 DefaultDirName={localappdata}\{#MyInstallDir}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-OutputBaseFilename=OpenClawCompanion{#MyOutputSuffix}-Setup-{#MyAppArch}
+OutputBaseFilename={#MyOutputBaseFilename}{#MyOutputSuffix}-Setup-{#MyAppArch}
 Compression={#MyCompression}
 SolidCompression={#MySolidCompression}
 WizardStyle=modern
@@ -108,16 +131,16 @@ Source: "{#vcRedist}"; DestDir: "{tmp}"; DestName: "vc_redist.exe"; Flags: delet
 #endif
 
 [Registry]
-Root: HKCU; Subkey: "Software\Classes\{#MyProtocol}"; ValueType: string; ValueName: ""; ValueData: "URL:OpenClaw Protocol"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\{#MyProtocol}"; ValueType: string; ValueName: ""; ValueData: "URL:{#MyAppName} Protocol"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\{#MyProtocol}"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
 Root: HKCU; Subkey: "Software\Classes\{#MyProtocol}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"",0"
 Root: HKCU; Subkey: "Software\Classes\{#MyProtocol}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
-Name: "{group}\OpenClaw Gateway Setup"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://setup"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
-Name: "{group}\OpenClaw Companion Settings"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://commandcenter"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
-Name: "{group}\OpenClaw Chat"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://chat"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
+Name: "{group}\{#MyGatewayShortcut}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://setup"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
+Name: "{group}\{#MySettingsShortcut}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://commandcenter"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
+Name: "{group}\{#MyChatShortcut}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://chat"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
 Name: "{group}\Check for Updates"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://check-updates"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; AppUserModelID: "{#MyAppAumid}"
@@ -191,7 +214,7 @@ begin
   begin
     LocalGatewayCleanupRequested :=
       MsgBox(
-        'Do you also want to remove the OpenClaw local WSL gateway?' + #13#10#13#10 +
+        'Do you also want to remove the {#MyAppName} local WSL gateway?' + #13#10#13#10 +
         'Choose Yes to unregister the {#MyDistroName} WSL distro and remove generated local gateway state.' + #13#10 +
         'Choose No to leave the local gateway and generated local state on this computer.',
         mbConfirmation,

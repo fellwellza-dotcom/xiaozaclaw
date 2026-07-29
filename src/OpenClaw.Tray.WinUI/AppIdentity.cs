@@ -6,7 +6,49 @@ namespace OpenClawTray;
 /// </summary>
 internal static class AppIdentity
 {
-#if DEV_BUILD
+#if XIAOZACLAW_BUILD
+    /// <summary>Human-visible app name shown in tray tooltips, window titles, and notifications.</summary>
+    public const string DisplayName = "xiaozaclaw";
+
+    /// <summary>Short name used in tray tooltip prefix.</summary>
+    public const string TrayName = "xiaozaclaw";
+
+    /// <summary>MSIX package identity name.</summary>
+    public const string PackageIdentityName = "xiaozaclaw.Desktop";
+
+    /// <summary>Win32 AppUserModelID used for notifications and shell grouping.</summary>
+    public const string AppUserModelId = PackageIdentityName;
+
+    /// <summary>Windows Registry auto-start value name.</summary>
+    public const string AutoStartRegistryName = "xiaozaclaw";
+
+    /// <summary>Windows scheduled task name.</summary>
+    public const string StartupTaskName = "xiaozaclaw";
+
+    /// <summary>Leaf directory for local and roaming app-owned data.</summary>
+    public const string DataDirectoryName = "xiaozaclaw";
+
+    /// <summary>Single-instance mutex base name.</summary>
+    public const string MutexBaseName = "xiaozaclaw";
+
+    /// <summary>Protocol scheme for deep links.</summary>
+    public const string ProtocolScheme = "xiaozaclaw";
+
+    /// <summary>App-owned WSL distro used by embedded setup.</summary>
+    public const string SetupDistroName = "xiaozaclawGateway";
+
+    /// <summary>Loopback gateway port used by embedded setup.</summary>
+    public const int SetupGatewayPort = 18889;
+
+    /// <summary>Default gateway URL for this app variant.</summary>
+    public const string SetupGatewayUrl = "ws://localhost:18889";
+
+    /// <summary>Whether this is a development build.</summary>
+    public static bool IsDev => false;
+
+    /// <summary>Whether this is the independently branded xiaozaclaw build.</summary>
+    public static bool IsXiaozaClaw => true;
+#elif DEV_BUILD
     /// <summary>Human-visible app name shown in tray tooltips, window titles, and notifications.</summary>
     public const string DisplayName = "OpenClaw Companion (Dev)";
 
@@ -45,6 +87,9 @@ internal static class AppIdentity
 
     /// <summary>Whether this is a development build.</summary>
     public static bool IsDev => true;
+
+    /// <summary>Whether this is the independently branded xiaozaclaw build.</summary>
+    public static bool IsXiaozaClaw => false;
 #else
     /// <summary>Human-visible app name shown in tray tooltips, window titles, and notifications.</summary>
     public const string DisplayName = "OpenClaw Companion";
@@ -84,6 +129,9 @@ internal static class AppIdentity
 
     /// <summary>Whether this is a development build.</summary>
     public static bool IsDev => false;
+
+    /// <summary>Whether this is the independently branded xiaozaclaw build.</summary>
+    public static bool IsXiaozaClaw => false;
 #endif
 
     public static string ResolveLocalDataDirectory()

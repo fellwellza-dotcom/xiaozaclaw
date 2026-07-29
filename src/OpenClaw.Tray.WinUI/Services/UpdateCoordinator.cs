@@ -60,15 +60,16 @@ internal sealed class UpdateCoordinator(
             return true; // Don't block launch
         }
 
-        if (AppIdentity.IsDev)
+        if (AppIdentity.IsDev || AppIdentity.IsXiaozaClaw)
         {
-            Logger.Info("Skipping release-channel update check in development build");
+            var buildKind = AppIdentity.IsXiaozaClaw ? "xiaozaclaw build" : "development build";
+            Logger.Info($"Skipping OpenClaw release-channel update check in {buildKind}");
             appState.UpdateInfo = new UpdateCommandCenterInfo
             {
                 Status = "Skipped",
                 CurrentVersion = AppVersionInfo.Version,
                 CheckedAt = DateTime.UtcNow,
-                Detail = "development build"
+                Detail = buildKind
             };
             _updateCheckGate.Release();
             return true;

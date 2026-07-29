@@ -32,11 +32,17 @@ param(
 
     [switch]$Dev,
 
+    [switch]$Xiaoza,
+
     [switch]$InstallInno
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+if ($Dev -and $Xiaoza) {
+    throw "Dev and Xiaoza are mutually exclusive."
+}
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot
@@ -105,7 +111,8 @@ function Publish-ArchitecturePayload {
         "--self-contained",
         "-o", $publishDir,
         "-v:minimal",
-        "-p:DevBuild=$($Dev.IsPresent.ToString().ToLowerInvariant())"
+        "-p:DevBuild=$($Dev.IsPresent.ToString().ToLowerInvariant())",
+        "-p:XiaozaBuild=$($Xiaoza.IsPresent.ToString().ToLowerInvariant())"
     )
     if ($PublishVersion) {
         $trayPublishArgs += "-p:Version=$PublishVersion"
@@ -128,7 +135,7 @@ function Assert-PayloadReady {
     }
 
     $identityMarker = Join-Path $publishDir "app-identity.txt"
-    $expectedIdentity = if ($Dev) { "dev" } else { "release" }
+    $expectedIdentity = if ($Xiaoza) { "xiaozaclaw" } elseif ($Dev) { "dev" } else { "release" }
     if (-not (Test-Path -LiteralPath $identityMarker)) {
         throw "Missing payload identity marker at $identityMarker. Rerun without -NoPublish."
     }
@@ -169,6 +176,9 @@ function Invoke-InnoCompiler {
     if ($Dev) {
         $args += "/DDevBuild=1"
     }
+    if ($Xiaoza) {
+        $args += "/DXiaozaBuild=1"
+    }
 
     $args += ".\installer.iss"
 
@@ -195,7 +205,7 @@ $architectures = if ($Arch -eq "All") { @("x64", "arm64") } else { @($Arch) }
 Write-Step "Using ISCC: $iscc"
 Write-Host "Version: $Version"
 Write-Host "Configuration: $Configuration"
-Write-Host "Identity: $(if ($Dev) { 'dev' } else { 'release' })"
+Write-Host "Identity: $(if ($Xiaoza) { 'xiaozaclaw' } elseif ($Dev) { 'dev' } else { 'release' })"
 Write-Host "Fast compression: $($Fast.IsPresent)"
 Write-Host "No publish: $($NoPublish.IsPresent)"
 

@@ -20,6 +20,9 @@
     Build the WinUI app with the side-by-side dev identity. Defaults off so
     release identity remains the default for every configuration.
 
+.PARAMETER XiaozaBuild
+    Build the independently branded xiaozaclaw identity.
+
 .PARAMETER NoTrustRepository
     Do not automatically add this checkout to git safe.directory when GitVersion
     cannot read a repo owned by a different Windows account/group. The script
@@ -42,10 +45,16 @@ param(
 
     [switch]$DevBuild,
 
+    [switch]$XiaozaBuild,
+
     [switch]$NoTrustRepository
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($DevBuild -and $XiaozaBuild) {
+    throw "DevBuild and XiaozaBuild are mutually exclusive."
+}
 
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $repoRoot
@@ -362,6 +371,9 @@ function Build-Project($name, $path, $useRid = $false) {
     if ($DevBuild -and ($name -eq "WinUI" -or $name -eq "Tray")) {
         $dotnetArgs += "-p:DevBuild=true"
     }
+    if ($XiaozaBuild -and ($name -eq "WinUI" -or $name -eq "Tray")) {
+        $dotnetArgs += "-p:XiaozaBuild=true"
+    }
     $result = Invoke-DotNetCaptured $dotnetArgs
     $exitCode = $LASTEXITCODE
     
@@ -459,10 +471,11 @@ if ($failCount -eq 0) {
         if ($winUITargetFramework) {
             $winUIOutputDirectory = ".\$winUIProjectDirectory\bin\$Configuration\$winUITargetFramework\$rid"
             $winUIManifestPath = ".\$winUIProjectDirectory\Package.appxmanifest"
-            $runIdentitySwitch = if ($DevBuild) { " -Dev" } else { "" }
+            $runIdentitySwitch = if ($XiaozaBuild) { " -Xiaoza" } elseif ($DevBuild) { " -Dev" } else { "" }
             Write-Host "  WinUI:    .\run-app-local.ps1 -NoBuild$runIdentitySwitch" -ForegroundColor White
             Write-Host "  Isolated: .\run-app-local.ps1 -NoBuild -Isolated$runIdentitySwitch" -ForegroundColor White
             Write-Host "  Dev:      .\run-app-local.ps1 -Dev" -ForegroundColor White
+            Write-Host "  xiaozaclaw: .\run-app-local.ps1 -Xiaoza -AllowNonMain" -ForegroundColor White
             Write-Host "  WinApp:   .\run-app-local.ps1 -NoBuild -UseWinApp$runIdentitySwitch" -ForegroundColor White
             Write-Host "            Direct launch is default. -UseWinApp runs: winapp run `"$winUIOutputDirectory`" --manifest `"$winUIManifestPath`" --executable `"OpenClaw.Tray.WinUI.exe`" --debug-output" -ForegroundColor DarkGray
         } else {
