@@ -12,8 +12,6 @@ namespace OpenClaw.SetupEngine.UI.Pages;
 
 public sealed partial class WelcomePage : Page
 {
-    private const string InstallButtonText = "Install a local gateway (WSL)";
-    private const string CheckingButtonText = "Checking existing setup...";
     private SetupConfig? _config;
     private bool _installSelected = true; // default selection
     private bool _suppressSelectionWrite;
@@ -21,7 +19,24 @@ public sealed partial class WelcomePage : Page
     public WelcomePage()
     {
         InitializeComponent();
+        ApplyBranding();
         Loaded += OnLoaded;
+    }
+
+    private SetupBranding Branding => SetupWindow.Active?.Branding ?? SetupBranding.OpenClaw;
+
+    private void ApplyBranding()
+    {
+        var branding = Branding;
+        WelcomeTitleText.Text = branding.WelcomeTitle;
+        WelcomeDescriptionText.Text = branding.WelcomeDescription;
+        InstallTitle.Text = branding.InstallLocalGateway;
+        RecommendedText.Text = branding.Recommended;
+        InstallDescriptionText.Text = branding.InstallLocalGatewayDescription;
+        ConnectTitleText.Text = branding.ConnectExistingGateway;
+        ConnectDescriptionText.Text = branding.ConnectExistingGatewayDescription;
+        BackButton.Content = branding.Back;
+        NextButton.Content = branding.Next;
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -119,7 +134,7 @@ public sealed partial class WelcomePage : Page
         var dataDir = setupWindow?.DataDir ?? SetupContext.ResolveDataDir();
 
         NextButton.IsEnabled = false;
-        InstallTitle.Text = CheckingButtonText;
+        InstallTitle.Text = Branding.CheckingExistingSetup;
         var navigating = false;
         try
         {
@@ -128,16 +143,22 @@ public sealed partial class WelcomePage : Page
             if (setupWindow is null or { IsClosed: true } || xamlRoot is null)
                 return;
 
-            var summary = ExistingConfigDetector.BuildReplacementSummary(existing);
+            var summary = Branding.BuildReplacementSummary(
+                existing.HasLocalGateway,
+                existing.HasDistro,
+                existing.DistroName,
+                existing.HasIdentityFiles,
+                existing.PreservedGatewayNames,
+                ExistingConfigDetector.BuildReplacementSummary(existing));
 
             var dialog = new ContentDialog
             {
                 Title = existing.HasLocalGateway || existing.HasDistro
-                    ? "Replace existing WSL gateway?"
-                    : "Install a new WSL gateway?",
+                    ? Branding.ReplaceGatewayTitle
+                    : Branding.InstallGatewayTitle,
                 Content = summary,
-                PrimaryButtonText = "Continue",
-                CloseButtonText = "Cancel",
+                PrimaryButtonText = Branding.Continue,
+                CloseButtonText = Branding.Cancel,
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = xamlRoot,
             };
@@ -153,7 +174,7 @@ public sealed partial class WelcomePage : Page
         {
             if (!navigating && setupWindow is { IsClosed: false })
             {
-                InstallTitle.Text = InstallButtonText;
+                InstallTitle.Text = Branding.InstallLocalGateway;
                 NextButton.IsEnabled = true;
             }
         }

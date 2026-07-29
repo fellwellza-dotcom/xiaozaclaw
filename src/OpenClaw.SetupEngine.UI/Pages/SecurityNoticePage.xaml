@@ -11,17 +11,17 @@
             <Image Source="ms-appx:///OpenClaw.SetupEngine.UI/Assets/Setup/OpenClawMascot.png"
                    Width="96" Height="96" HorizontalAlignment="Center"
                    AutomationProperties.AccessibilityView="Raw" />
-            <TextBlock Text="Welcome to OpenClaw"
+            <TextBlock x:Name="SecurityTitleText" Text="Welcome to OpenClaw"
                        Style="{StaticResource TitleTextBlockStyle}"
                        HorizontalAlignment="Center" />
-            <TextBlock TextWrapping="Wrap" TextAlignment="Center" MaxWidth="480"
+            <TextBlock x:Name="SecurityDescriptionText" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="480"
                        Style="{StaticResource BodyTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        HorizontalAlignment="Center"
                        Text="OpenClaw runs your personal AI agent through a private gateway on this PC: reachable from chat apps like WhatsApp or Telegram." />
         </StackPanel>
 
-        <InfoBar Grid.Row="1" VerticalAlignment="Top" Margin="0,24,0,0" MaxWidth="560"
+        <InfoBar x:Name="SecurityNoticeInfoBar" Grid.Row="1" VerticalAlignment="Top" Margin="0,24,0,0" MaxWidth="560"
                  IsOpen="True" IsClosable="False" Severity="Warning"
                  Title="Security notice"
                  Message="The AI agent you connect (for example, Claude) can take powerful actions on this PC, including running commands, reading and writing files, and capturing your screen. Those actions depend on what you allow.&#x0a;&#x0a;Only set this up on a computer you trust, and only continue if you understand the risks and trust the prompts and integrations you use. You choose exactly what to allow in the next steps." />

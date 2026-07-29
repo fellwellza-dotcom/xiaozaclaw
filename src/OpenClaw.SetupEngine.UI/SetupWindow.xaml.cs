@@ -34,6 +34,7 @@ public sealed partial class SetupWindow : Window
     public Task CleanupCompleted => _cleanupCompleted.Task;
     internal string DataDir => _dataDir;
     internal string LocalDataDir => _localDataDir;
+    public SetupBranding Branding { get; }
     public bool CanNavigateToWizard =>
         !_isClosed &&
         _setupLock is not null &&
@@ -54,11 +55,15 @@ public sealed partial class SetupWindow : Window
         string? localDataDir = null,
         string? distroNameOverride = null,
         int? gatewayPortOverride = null,
-        string[]? commandLineArgs = null)
+        string[]? commandLineArgs = null,
+        SetupBranding? branding = null)
     {
         _dataDir = dataDir ?? SetupContext.ResolveDataDir();
         _localDataDir = localDataDir ?? SetupContext.ResolveLocalDataDir();
+        Branding = branding ?? SetupBranding.OpenClaw;
         InitializeComponent();
+        Title = Branding.SetupTitle;
+        SetupTitleText.Text = Branding.SetupTitle;
         Active = this;
 
         Closed += async (_, _) =>

@@ -12,6 +12,12 @@ public sealed partial class SecurityNoticePage : Page
     public SecurityNoticePage()
     {
         InitializeComponent();
+        var branding = SetupWindow.Active?.Branding ?? SetupBranding.OpenClaw;
+        SecurityTitleText.Text = branding.SecurityTitle;
+        SecurityDescriptionText.Text = branding.SecurityDescription;
+        SecurityNoticeInfoBar.Title = branding.SecurityNoticeTitle;
+        SecurityNoticeInfoBar.Message = branding.SecurityNoticeMessage;
+        ContinueButton.Content = branding.Continue;
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

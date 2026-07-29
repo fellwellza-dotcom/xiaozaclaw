@@ -798,13 +798,13 @@ public sealed class AppRefactorContractTests
         var method = ExtractMethod(source, "StartInstallAsync");
 
         Assert.Contains("NextButton.IsEnabled = false", method);
-        Assert.Contains("InstallTitle.Text = CheckingButtonText", method);
-        Assert.Contains("CheckingButtonText", method);
+        Assert.Contains("InstallTitle.Text = Branding.CheckingExistingSetup", method);
+        Assert.Contains("Branding.BuildReplacementSummary", method);
         Assert.Contains("var setupWindow = SetupWindow.Active", method);
         Assert.Contains("await Task.Run(() => ExistingConfigDetector.Detect", method);
         Assert.Contains("setupWindow is null or { IsClosed: true } || xamlRoot is null", method);
         Assert.Contains("setupWindow is { IsClosed: false }", method);
-        Assert.Contains("InstallTitle.Text = InstallButtonText", method);
+        Assert.Contains("InstallTitle.Text = Branding.InstallLocalGateway", method);
         Assert.Contains("NextButton.IsEnabled = true", method);
         AssertInOrder(
             method,

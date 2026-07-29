@@ -70,4 +70,15 @@ public sealed class XiaozaBuildContractTests
         Assert.Contains("AppIdentity.IsDev || AppIdentity.IsXiaozaClaw", source);
         Assert.Contains("Skipping OpenClaw release-channel update check", source);
     }
+
+    [Fact]
+    public void SetupWindow_ReceivesXiaozaclawChineseBranding()
+    {
+        var app = Read("src", "OpenClaw.Tray.WinUI", "App.xaml.cs");
+        var setupWindow = Read("src", "OpenClaw.SetupEngine.UI", "SetupWindow.xaml.cs");
+
+        Assert.Contains("SetupBranding.XiaozaclawSimplifiedChinese", app);
+        Assert.Contains("Branding = branding ?? SetupBranding.OpenClaw", setupWindow);
+        Assert.Contains("SetupTitleText.Text = Branding.SetupTitle", setupWindow);
+    }
 }

@@ -12,10 +12,10 @@
                    Source="ms-appx:///OpenClaw.SetupEngine.UI/Assets/Setup/OpenClawMascot.png"
                    Width="96" Height="96" HorizontalAlignment="Center"
                    AutomationProperties.AccessibilityView="Raw" />
-            <TextBlock Text="Set up OpenClaw"
+            <TextBlock x:Name="WelcomeTitleText" Text="Set up OpenClaw"
                        Style="{StaticResource TitleTextBlockStyle}"
                        HorizontalAlignment="Center" />
-            <TextBlock TextWrapping="Wrap" TextAlignment="Center" MaxWidth="460"
+            <TextBlock x:Name="WelcomeDescriptionText" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="460"
                        Style="{StaticResource BodyTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        HorizontalAlignment="Center"
@@ -56,12 +56,12 @@
                                            VerticalAlignment="Center" />
                                 <Border CornerRadius="4" Padding="7,1" VerticalAlignment="Center"
                                         BorderBrush="{ThemeResource AccentTextFillColorPrimaryBrush}" BorderThickness="1">
-                                    <TextBlock Text="Recommended"
+                                    <TextBlock x:Name="RecommendedText" Text="Recommended"
                                                Style="{StaticResource CaptionTextBlockStyle}"
                                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
                                 </Border>
                             </StackPanel>
-                            <TextBlock TextWrapping="Wrap"
+                            <TextBlock x:Name="InstallDescriptionText" TextWrapping="Wrap"
                                        Style="{StaticResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        Text="A private, self-hosted OpenClaw gateway in an isolated Ubuntu WSL instance. We'll show exactly what gets installed before anything runs." />
@@ -82,9 +82,9 @@
                                       Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
                         </Border>
                         <StackPanel Grid.Column="1" Spacing="3">
-                            <TextBlock Text="Connect to an existing gateway"
+                            <TextBlock x:Name="ConnectTitleText" Text="Connect to an existing gateway"
                                        Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <TextBlock TextWrapping="Wrap"
+                            <TextBlock x:Name="ConnectDescriptionText" TextWrapping="Wrap"
                                        Style="{StaticResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        Text="Already run an OpenClaw gateway: here, on another machine, or remote? Pair without installing anything." />

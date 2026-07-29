@@ -35,6 +35,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Updatum;
 using WinUIEx;
+using SetupBranding = OpenClaw.SetupEngine.UI.SetupBranding;
 using SetupCompletedEventArgs = OpenClaw.SetupEngine.UI.SetupCompletedEventArgs;
 using SetupWindow = OpenClaw.SetupEngine.UI.SetupWindow;
 
@@ -3909,8 +3910,11 @@ public partial class App : Application, OpenClawTray.Services.IAppCommands
                 commandLineArgs: SetupWindowArgumentProjection.Project(
                     _startupArgs,
                     IsDeepLinkArg,
-                    Environment.ProcessId));
-            setupWindow.Title = AppIdentity.DecorateWindowTitle("OpenClaw Setup");
+                    Environment.ProcessId),
+                branding: AppIdentity.IsXiaozaClaw
+                    ? SetupBranding.XiaozaclawSimplifiedChinese
+                    : SetupBranding.OpenClaw);
+            setupWindow.Title = AppIdentity.DecorateWindowTitle(setupWindow.Title);
             _setupWindow = setupWindow;
             setupWindow.AdvancedSetupRequested += OnSetupAdvancedSetupRequested;
             setupWindow.SetupCompleted += OnSetupCompleted;
