@@ -1,0 +1,70 @@
+name: xiaozaclaw
+
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: xiaozaclaw/new-api:local
+    container_name: xiaozaclaw-new-api
+    restart: unless-stopped
+    command: --log-dir /app/logs
+    ports:
+      - "${XIAOZACLAW_PORT:-3000}:3000"
+    volumes:
+      - xiaozaclaw_data:/data
+      - xiaozaclaw_logs:/app/logs
+    environment:
+      SQL_DSN: postgresql://${POSTGRES_USER:?Set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?Run setup.ps1 to create secrets}@postgres:5432/${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      REDIS_CONN_STRING: redis://:${REDIS_PASSWORD:?Run setup.ps1 to create secrets}@redis:6379
+      SESSION_SECRET: ${SESSION_SECRET:?Run setup.ps1 to create secrets}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SESSION_COOKIE_TRUSTED_URL: ${SESSION_COOKIE_TRUSTED_URL:-}
+      TZ: ${TZ:-Asia/Shanghai}
+      NODE_NAME: xiaozaclaw-primary
+      ERROR_LOG_ENABLED: "true"
+      BATCH_UPDATE_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: xiaozaclaw-redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Run setup.ps1 to create secrets}"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Run setup.ps1 to create secrets}
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: xiaozaclaw-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run setup.ps1 to create secrets}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+    volumes:
+      - xiaozaclaw_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  xiaozaclaw_data:
+  xiaozaclaw_logs:
+  xiaozaclaw_postgres:

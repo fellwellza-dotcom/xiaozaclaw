@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\OpenClaw.WinNode.Cli\OpenClaw.WinNode.Cli.csproj" />
-    <ProjectReference Include="..\OpenClaw.TestSupport\OpenClaw.TestSupport.csproj" />
-  </ItemGroup>
-
-</Project>

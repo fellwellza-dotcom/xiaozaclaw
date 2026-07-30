@@ -1,439 +1,511 @@
-# 🦞 OpenClaw Windows Hub
-
-![OpenClaw Windows Node banner](docs/assets/readme-banner.jpg)
-
-A native Windows companion suite for [OpenClaw](https://openclaw.ai) - the AI-powered personal assistant.
-
-*Made with 🦞 love by Scott Hanselman and Molty*
-
-![OpenClaw Windows Hub tray menu](docs/images/openclawwindows1.png)
-
-![OpenClaw Windows Hub command center](docs/images/openclawwindows2.png)
-
-![OpenClaw Windows Hub pairing and connection settings](docs/images/openclawwindows3.png)
-
-![OpenClaw Windows Hub activity and diagnostics](docs/images/openclawwindows4.png)
-
-## Projects
-
-This monorepo contains the Windows hub, shared client libraries, and CLI utilities:
-
-| Project | Description |
-|---------|-------------|
-| **OpenClaw.Tray.WinUI** | System tray application (WinUI 3) for quick access to OpenClaw |
-| **OpenClaw.Connection** | Gateway registry, credential resolution, and connection manager |
-| **OpenClaw.Shared** | Shared gateway client library, capabilities, and MCP bridge |
-| **OpenClaw.Chat** | Native chat model and timeline reducer |
-| **OpenClaw.Cli** | CLI validator for WebSocket connect/send/probe using tray settings |
-| **OpenClaw.WinNode.Cli** | `winnode` CLI for invoking local Windows node/MCP capabilities |
-| **OpenClaw.SetupEngine** | Local gateway setup, WSL installation, and setup-code support |
-| **OpenClaw.SetupEngine.UI** | WinUI setup wizard pages hosted by the tray app |
-| **OpenClawTray.FunctionalUI** | In-repo declarative WinUI helper used by native chat and newer UI surfaces |
-
-## 🚀 Quick Start
-
-> **End-user installer?** Download the latest stable x64 or ARM64 installer from the [OpenClaw Windows docs](https://docs.openclaw.ai/platforms/windows), or see [docs/SETUP.md](docs/SETUP.md) for step-by-step installation (no build required).
->
-> **Managed WSL gateway?** Local setup creates a locked-down app-owned `OpenClawGateway` distro. See [docs/WSL_GATEWAY_ADMIN.md](docs/WSL_GATEWAY_ADMIN.md) for editing `openclaw.json` as the `openclaw` user and using root for protected-file administration.
->
-> **Operator or node?** Start with [Operator and node concepts](docs/OPERATOR_NODE_CONCEPTS.md) for the beginner-facing glossary of gateway, operator, node, pairing, reapproval, and allowlisted node capabilities.
-
-Direct downloads from the latest OpenClaw Windows release:
-
-- [OpenClawCompanion-Setup-x64.exe](https://github.com/openclaw/openclaw-windows-node/releases/latest/download/OpenClawCompanion-Setup-x64.exe)
-- [OpenClawCompanion-Setup-arm64.exe](https://github.com/openclaw/openclaw-windows-node/releases/latest/download/OpenClawCompanion-Setup-arm64.exe)
-- [OpenClawCompanion-SHA256SUMS.txt](https://github.com/openclaw/openclaw-windows-node/releases/latest/download/OpenClawCompanion-SHA256SUMS.txt)
-
-### Prerequisites
-- Windows 10 (20H2+) or Windows 11
-- .NET 10.0 SDK - https://dotnet.microsoft.com/download/dotnet/10.0
-- Node.js LTS with npm (for WinUI build assets)
-- Windows 10 SDK (for WinUI build) - install via Visual Studio or standalone
-- WebView2 Runtime - pre-installed on modern Windows, or get from https://developer.microsoft.com/microsoft-edge/webview2
-
-### Developer / Agent Setup
-
-Use the setup script to install or verify local Windows build prerequisites:
-
-```powershell
-# Install missing prerequisites with winget, trust the checkout, and verify setup
-.\scripts\setup-dev.ps1
-
-# Check only; do not install packages or change git safe.directory
-.\scripts\setup-dev.ps1 -CheckOnly
-
-# Install/verify prerequisites without adding the checkout to git safe.directory
-.\scripts\setup-dev.ps1 -NoTrustRepository
-
-# Setup and run the required build/test validation
-.\scripts\setup-dev.ps1 -RunValidation
-```
-
-### Build
-
-Use the build script to check prerequisites and build:
-
-```powershell
-# Check prerequisites
-.\build.ps1 -CheckOnly
-
-# Build all projects
-.\build.ps1
-
-# Build specific project
-.\build.ps1 -Project WinUI
-```
-
-Or build directly with dotnet:
-
-```powershell
-# Build all (use build.ps1 for best results)
-dotnet build
-
-# Build WinUI (requires runtime identifier for WebView2 support)
-dotnet build src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj -r win-arm64  # ARM64
-dotnet build src/OpenClaw.Tray.WinUI/OpenClaw.Tray.WinUI.csproj -r win-x64    # x64
-
-# Build MSIX package (for camera/mic consent prompts)
-dotnet build src/OpenClaw.Tray.WinUI -r win-arm64 -p:PackageMsix=true  # ARM64 MSIX
-dotnet build src/OpenClaw.Tray.WinUI -r win-x64 -p:PackageMsix=true    # x64 MSIX
-```
-
-### Run Tray App
-
-```powershell
-# Build and launch the unpackaged WinUI tray app
-.\run-app-local.ps1
-
-# If you already built, skip rebuild and launch the existing Debug output
-.\run-app-local.ps1 -NoBuild
-
-# Run isolated from your normal tray settings so multiple worktrees can run together
-.\run-app-local.ps1 -Isolated
-
-# Opt into side-by-side dev identity (separate mutex, protocol, gateway distro, and port)
-.\run-app-local.ps1 -Dev -Isolated
-
-# Alpha update testing from a Release build
-.\run-app-local.ps1 -Configuration Release -Isolated -UpdateChannel alpha
-
-# Optional: launch through WinAppCLI with Package.appxmanifest
-.\run-app-local.ps1 -UseWinApp -NoBuild
-```
-
-The default path starts the unpackaged executable directly. `-UseWinApp` requires
-Microsoft WinAppCLI (`winget install Microsoft.WinAppCLI`) and is only needed when
-you want manifest/MSIX-adjacent launch validation.
-
-### Run CLI WebSocket Validator
-
-Use the CLI to validate gateway connectivity and `chat.send` outside the tray UI.
-
-```powershell
-# Show help
-dotnet run --project src/OpenClaw.Cli -- --help
-
-# Use tray settings from %APPDATA%\OpenClawTray\settings.json and send one message
-dotnet run --project src/OpenClaw.Cli -- --message "quick send validation"
-
-# Loop sends and also probe sessions/usage/nodes APIs
-dotnet run --project src/OpenClaw.Cli -- --repeat 5 --delay-ms 1000 --probe-read --verbose
-
-# Override gateway URL/token for isolated testing
-dotnet run --project src/OpenClaw.Cli -- --url ws://127.0.0.1:18789 --token "<token>" --message "override test"
-```
-
-## 📦 OpenClaw.Tray (Molty)
-
-Modern Windows 11-style system tray companion that connects to your local OpenClaw gateway.
-
-### Features
-- 🎨 **OpenClaw branding** - OpenClaw tray icon with status colors
-- 🎨 **Modern UI** - Windows 11 flyout menu with dark/light mode support
-- 💬 **Quick Send** - Send messages via global hotkey (Ctrl+Alt+Shift+C)
-- 🔄 **Auto-updates** - Automatic updates from GitHub Releases
-- 🌐 **Web Chat** - Embedded chat window with WebView2
-- 📊 **Live Status** - Real-time sessions, channels, and usage display
-- 🧭 **Command Center** - Dense gateway, channel, usage, node, pairing, and allowlist diagnostics from one window
-- ⚡ **Activity Stream** - Command Center page for live session, usage, node, and notification events
-- 🔔 **Toast Notifications** - Clickable Windows notifications with [smart categorization](docs/NOTIFICATION_CATEGORIZATION.md)
-- 📡 **Channel Control** - Start/stop Telegram & WhatsApp from the menu
-- 🖥️ **Node Observability** - Node inventory with online/offline state and copyable summary
-- ⏱ **Cron Jobs** - Quick access to scheduled tasks
-- 🚀 **Auto-start** - Launch with Windows
-- ⚙️ **Settings** - Full configuration page
-- 🎯 **First-run onboarding** — native WSL gateway setup with capability, permission, install, onboard, and completion screens
-
-#### Quick Send scope requirement
-
-Quick Send uses the gateway `chat.send` method and requires the operator device to have `operator.write` scope.
-
-If Quick Send fails with `missing scope: operator.write`, Molty now copies identity + remediation guidance to your clipboard, including:
-
-- operator role and `client.id` used by the tray app
-- gateway-reported operator device id (if provided)
-- currently granted scopes (if provided)
-
-For this specific error (`missing scope: operator.write`), the cause is an **operator token scope issue**. Update the token used by the tray app so it includes `operator.write`, then retry Quick Send.
-
-If Quick Send fails with `pairing required` / `NOT_PAIRED`, that is a **device approval** issue. Approve the tray device in gateway pairing approvals, reconnect, and retry.
-
-### Menu Sections
-- **Status** - Gateway connection status with click-to-view details
-- **Command Center** - Hub with diagnostics, channel health, usage, sessions, nodes, and copyable repair commands
-- **Sessions** - Active agent sessions with preview and per-session controls
-- **Usage** - Provider/cost summary with quick jump to activity details
-- **Channels** - Telegram/WhatsApp status with toggle control
-- **Nodes** - Online/offline node inventory and copyable summary
-- **Recent Activity** - Timestamped event stream for sessions, usage, nodes, and notifications
-- **Actions** - Dashboard, Web Chat, Quick Send, Activity Stream, History
-- **Support & Debug** - Logs, config, diagnostics folder, redacted support context, browser setup, port/capability/node/channel/activity summaries, and managed SSH tunnel restart
-- **Settings** - Configuration and auto-start
-
-### Mac Parity Status
-
-Comparing against [openclaw-menubar](https://github.com/magimetal/openclaw-menubar) (macOS Swift menu bar app):
-
-| Feature | Mac | Windows | Notes |
-|---------|-----|---------|-------|
-| Menu bar/tray icon | ✅ | ✅ | Color-coded status |
-| Gateway status display | ✅ | ✅ | Connected/Disconnected |
-| PID display | ✅ | ✅ | Command Center shows gateway listener process/PID |
-| Channel status | ✅ | ✅ | Mac: Discord / Win: Telegram+WhatsApp |
-| Sessions count | ✅ | ✅ | |
-| Last check timestamp | ✅ | ✅ | Shown in tray tooltip |
-| Gateway start/stop/restart | ✅ | ⚠️ | Windows can restart the managed SSH tunnel from tray Support & Debug and Command Center; external gateway process control is not implemented |
-| View Logs | ✅ | ✅ | |
-| Open Web UI | ✅ | ✅ | |
-| Refresh | ✅ | ✅ | Auto-refresh on menu open |
-| Launch at Login | ✅ | ✅ | |
-| Notifications toggle | ✅ | ✅ | |
-
-### Windows-Only Features
-
-These features are available in Windows but not in the Mac app:
-
-| Feature | Description |
-|---------|-------------|
-| Quick Send hotkey | Ctrl+Alt+Shift+C global hotkey |
-| Embedded Web Chat | WebView2-based chat window |
-| Toast notifications | Clickable Windows notifications |
-| Channel control | Start/stop Telegram & WhatsApp |
-| Modern flyout menu | Windows 11-style with dark/light mode |
-| Deep links | `openclaw://` URL scheme with IPC |
-| First-run onboarding | Native setup flow: Security notice → Welcome/Advanced → Capabilities and permissions → Install progress → OpenClaw onboard → Complete |
-
-### 🔌 Node Mode (Agent Control)
-
-If the operator/node split is new to you, read [Operator and node concepts](docs/OPERATOR_NODE_CONCEPTS.md) before enabling Node Mode.
-
-When Node Mode is enabled in Settings, your Windows PC becomes a **node** that the OpenClaw agent can control - just like the Mac app! The agent can:
-
-| Capability | Commands | Description |
-|------------|----------|-------------|
-| **System** | `system.notify`, `system.run`, `system.run.prepare`, `system.which`, `system.execApprovals.get`, `system.execApprovals.set` | Show Windows toast notifications, execute commands with policy controls |
-| **Canvas** | `canvas.present`, `canvas.hide`, `canvas.navigate`, `canvas.eval`, `canvas.snapshot`, `canvas.a2ui.push`, `canvas.a2ui.pushJSONL`, `canvas.a2ui.reset` | Display and control a WebView2 window |
-| **Screen** | `screen.snapshot`, `screen.record` | Capture screenshots and fixed-duration MP4 screen recordings |
-| **Camera** | `camera.list`, `camera.snap`, `camera.clip` | Enumerate cameras and capture still photos or short video clips |
-| **Speech-to-text** | `stt.transcribe` | Capture audio from the default microphone for a bounded duration and return transcribed text. Default-off; opt-in via Settings. When enabled, advertised to both gateway callers (subject to gateway allowlist) and local MCP clients (subject to bearer token). |
-| **Location** | `location.get` | Return Windows geolocation when permission is available |
-| **Device** | `device.info`, `device.status` | Return Windows host/app metadata and lightweight status |
-| **Text-to-speech** | `tts.speak` | Speak text aloud through Windows speech synthesis, or ElevenLabs when configured |
-
-Packaged installs declare camera, microphone, and location capabilities. Windows may ask for consent the first time a node capability uses one of those protected resources.
-
-#### Node Setup
-
-1. **Enable Node Mode** in Settings (enabled by default)
-2. **First connection** creates a pairing request on the gateway
-3. **Approve the device** on your gateway:
-   ```bash
-   openclaw devices list          # Find your Windows device
-   openclaw devices approve <id>  # Approve it
-   ```
-4. **Configure gateway allowCommands** - Add the commands you want to allow under `gateway.nodes` in `~/.openclaw/openclaw.json`:
-   ```json
-   {
-     "gateway": {
-       "nodes": {
-         "allowCommands": [
-           "system.notify",
-           "system.run",
-           "system.run.prepare",
-           "system.which",
-           "system.execApprovals.get",
-           "system.execApprovals.set",
-           "canvas.present",
-           "canvas.hide",
-           "canvas.navigate",
-           "canvas.eval",
-           "canvas.snapshot",
-           "canvas.a2ui.push",
-           "canvas.a2ui.pushJSONL",
-           "canvas.a2ui.reset",
-           "screen.snapshot",
-           "camera.list",
-           "camera.snap",
-           "camera.clip",
-           "location.get",
-           "device.info",
-           "device.status",
-           "tts.speak"
-         ]
-       }
-     }
-   }
-   ```
-    > ⚠️ **Important**: The gateway has a server-side allowlist. Commands must be listed explicitly - wildcards like `canvas.*` don't work! Privacy-sensitive commands such as `screen.record` and agent-driven audio playback via `tts.speak` should only be added to `allowCommands` when you explicitly want to allow them.
-
-5. **Test it** from your Mac/gateway:
-   ```bash
-    # Show a notification
-    openclaw nodes notify --node <id> --title "Hello" --body "From Mac!"
-    
-    # Open a canvas window
-    openclaw nodes canvas present --node <id> --url "https://example.com"
-    
-    # Execute JavaScript (note: CLI sends "javaScript" param)
-    openclaw nodes canvas eval --node <id> --javaScript "document.title"
-    
-    # Render A2UI JSONL in the canvas (pass the file contents as a string)
-    openclaw nodes canvas a2ui push --node <id> --jsonl "$(cat ./ui.jsonl)"
-    
-    # Take a screenshot
-    openclaw nodes invoke --node <id> --command screen.snapshot --params '{"screenIndex":0,"format":"png"}'
-
-    # Record a short screen clip (requires explicitly allowing screen.record on the gateway)
-    openclaw nodes screen record --node <id> --duration 3000 --fps 10 --screen 0 --no-audio --out /tmp/openclaw-windows-screen-record-test.mp4 --json
-
-    # List cameras
-    openclaw nodes invoke --node <id> --command camera.list
-
-    # Take a photo (NV12/MediaCapture fallback)
-    openclaw nodes invoke --node <id> --command camera.snap --params '{"deviceId":"<device-id>","format":"jpeg","quality":80}'
-
-    # Speak text aloud on the Windows node (requires TTS enabled in Settings and tts.speak allowed on the gateway)
-    openclaw nodes invoke --node <id> --command tts.speak --params '{"text":"Hello from OpenClaw","provider":"windows"}'
-
-    # Execute a command on the Windows node
-    openclaw nodes invoke --node <id> --command system.run --params '{"command":"Get-Process | Select -First 5","shell":"powershell","timeoutMs":10000}'
-
-    # View exec approval policy
-    openclaw nodes invoke --node <id> --command system.execApprovals.get
-
-    # Update exec approval policy (add custom rules)
-    openclaw nodes invoke --node <id> --command system.execApprovals.set --params '{"rules":[{"pattern":"echo *","action":"allow"},{"pattern":"*","action":"deny"}],"defaultAction":"deny"}'
-    ```
-    > 📷 **Camera permission**: Desktop builds rely on Windows Privacy settings. Packaged MSIX builds will show the system consent prompt.
-    
-    > 🔒 **Exec Policy**: `system.run` is gated by an approval policy on the Windows node at `%LOCALAPPDATA%\OpenClawTray\exec-policy.json` (schema: `{ "defaultAction": "...", "rules": [...] }`). This is separate from gateway-side `~/.openclaw/exec-approvals.json`.
-    >
-    > Rules are matched against the full command line. Known wrapper payloads such as `cmd /c ...`, `powershell -Command ...`, `pwsh -EncodedCommand ...`, and `bash -c ...` are also evaluated before execution. Dangerous environment overrides like `PATH`, `PATHEXT`, `NODE_OPTIONS`, `GIT_SSH_COMMAND`, `LD_*`, and `DYLD_*` are rejected.
-
-#### Command Center diagnostics
-
-Open the status detail/Command Center from the tray menu or with `openclaw://commandcenter`. It shows:
-
-- channel health from gateway `health` events, including node-mode health received without a separate operator connection
-- active sessions, usage/cost data, node inventory, declared commands, and Mac parity notes
-- allowlist diagnostics that separate safe companion commands from privacy-sensitive opt-ins like `screen.record`, `camera.snap`, and `camera.clip`
-- copyable repair commands for safe allowlist fixes and pending pairing approval
-- recent activity and node invoke results through the Activity Stream, storing command names/status/duration only (not payloads, screenshots, recordings, or secrets)
-    >
-    > ```bash
-    > openclaw nodes invoke --node <id> --command system.execApprovals.set --params '{"rules":[{"pattern":"powershell.exe","action":"allow"},{"pattern":"pwsh.exe","action":"allow"},{"pattern":"echo *","action":"allow"},{"pattern":"*","action":"deny"}],"defaultAction":"deny"}'
-    > ```
-
-    > 🔐 **Web Chat secure context**: Remote web chat requires `https://` (or localhost). If using a self-signed cert, trust it in Windows (Trusted Root Certification Authorities) or use an SSH tunnel to localhost.
-
-#### Node Status in Tray Menu
-
-The tray menu shows node connection status:
-- **🔌 Node Mode** section appears when enabled
-- **⏳ Waiting for approval...** - Device needs approval on gateway
-- **✅ Paired & Connected** - Ready to receive commands
-- Click the device ID to copy it for the approval command
-
-### Deep Links
-
-OpenClaw registers the `openclaw://` URL scheme for automation and integration:
-
-| Link | Description |
-|------|-------------|
-| `openclaw://settings` | Open the Settings page |
-| `openclaw://setup` | Open Setup Wizard |
-| `openclaw://chat` | Open the Chat page |
-| `openclaw://commandcenter` | Open Command Center diagnostics |
-| `openclaw://activity` | Open the Activity page |
-| `openclaw://history` | Open the Activity page filtered to notification history |
-| `openclaw://dashboard` | Open Dashboard in browser |
-| `openclaw://dashboard/sessions` | Open specific dashboard page |
-| `openclaw://dashboard/channels` | Open Channels dashboard page |
-| `openclaw://dashboard/skills` | Open Skills dashboard page |
-| `openclaw://dashboard/cron` | Open Cron dashboard page |
-| `openclaw://healthcheck` | Run a manual health check |
-| `openclaw://check-updates` | Run a manual update check |
-| `openclaw://logs` | Open the current tray log file |
-| `openclaw://log-folder` | Open the logs folder |
-| `openclaw://config` | Open the config folder |
-| `openclaw://diagnostics` | Open the diagnostics JSONL folder |
-| `openclaw://support-context` | Copy redacted support context |
-| `openclaw://debug-bundle` | Copy a combined debug bundle for support |
-| `openclaw://browser-setup` | Copy browser.proxy/browser-control setup guidance |
-| `openclaw://port-diagnostics` | Copy gateway/browser/tunnel port diagnostics with owner PID stop hints |
-| `openclaw://capability-diagnostics` | Copy permissions, allowlist, and parity diagnostics |
-| `openclaw://node-inventory` | Copy node capabilities, commands, and policy status |
-| `openclaw://channel-summary` | Copy channel health and start/stop availability |
-| `openclaw://activity-summary` | Copy recent tray activity for troubleshooting |
-| `openclaw://extensibility-summary` | Copy channel, skills, and cron dashboard surface guidance |
-| `openclaw://restart-ssh-tunnel` | Restart the tray-managed SSH tunnel when enabled |
-| `openclaw://send?message=Hello` | Open Quick Send with pre-filled text |
-| `openclaw://agent?message=Hello` | Send message directly to the connected gateway |
-
-Deep links work even when Molty is already running - they're forwarded via IPC.
-
-## 📦 OpenClaw.Shared
-
-Shared library containing:
-- `OpenClawGatewayClient` - WebSocket client for gateway protocol
-- `IOpenClawLogger` - Logging interface
-- Data models (SessionInfo, ChannelHealth, etc.)
-- Channel control (start/stop channels via gateway)
-
-## Development
-
-### Project Structure
-
-See [DEVELOPMENT.md](DEVELOPMENT.md#project-structure) for the complete and current `src/` and `tests/` project inventory.
-
-### Configuration
-
-Settings are stored in:
-- Settings: `%APPDATA%\OpenClawTray\settings.json`
-- Logs: `%LOCALAPPDATA%\OpenClawTray\openclaw-tray.log`
-- Easy-button setup summary: `%LOCALAPPDATA%\OpenClawTray\Logs\Setup\easy-setup-latest.txt`
-- Easy-button setup JSONL: `%LOCALAPPDATA%\OpenClawTray\Logs\Setup\easy-setup-latest.jsonl`
-
-Default gateway: `ws://localhost:18789`
-
-### First Run
-
-On first run, Molty launches a guided setup flow:
-
-1. **Security notice** — confirms this is a trusted PC before local setup starts.
-2. **Welcome** — choose **Install a local gateway (WSL)** or connect to an existing gateway from Connections.
-3. **Capabilities** — choose a profile, review matching Windows permission status, and see exactly what setup will install.
-4. **Progress** — installs the app-owned `OpenClawGateway` WSL instance and keeps Live activity available but collapsed by default.
-5. **Gateway installed** — confirms the WSL gateway is running before moving into OpenClaw onboard.
-6. **OpenClaw onboard** — gateway-driven provider/model/key setup rendered as a transcript.
-7. **All set** — summary of available features, startup preference, and Finish.
-
-For detailed setup instructions, see [docs/SETUP.md](docs/SETUP.md). For the full onboarding architecture, see [docs/ONBOARDING_WIZARD.md](docs/ONBOARDING_WIZARD.md).
-
-## License
-
-MIT License - see [LICENSE](LICENSE)
+<div align="center">
+
+![new-api](/web/public/logo.png)
+
+# New API
+
+🍥 **Next-Generation LLM Gateway and AI Asset Management System**
+
+<p align="center">
+  <a href="./README.zh_CN.md">简体中文</a> |
+  <a href="./README.zh_TW.md">繁體中文</a> |
+  <strong>English</strong> |
+  <a href="./README.fr.md">Français</a> |
+  <a href="./README.ja.md">日本語</a>
+</p>
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/Calcium-Ion/new-api/main/LICENSE">
+    <img src="https://img.shields.io/github/license/Calcium-Ion/new-api?color=brightgreen" alt="license">
+  </a><!--
+  --><a href="https://github.com/Calcium-Ion/new-api/releases/latest">
+    <img src="https://img.shields.io/github/v/release/Calcium-Ion/new-api?color=brightgreen&include_prereleases" alt="release">
+  </a><!--
+  --><a href="https://hub.docker.com/r/CalciumIon/new-api">
+    <img src="https://img.shields.io/badge/docker-dockerHub-blue" alt="docker">
+  </a>
+  <a href="https://atomgit.com/QuantumNous/new-api" target="_blank">
+    <img alt="AtomGit G-Star" src="https://atomgit.com/QuantumNous/new-api/star/badge.svg"/>
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://trendshift.io/repositories/20180" target="_blank">
+    <img src="https://trendshift.io/api/badge/repositories/20180" alt="QuantumNous%2Fnew-api | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/>
+  </a>
+  <br>
+  <a href="https://hellogithub.com/repository/QuantumNous/new-api" target="_blank">
+    <img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=539ac4217e69431684ad4a0bab768811&claim_uid=tbFPfKIDHpc4TzR" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" />
+  </a><!--
+  -->
+  <a href="https://atomgit.com/QuantumNous/new-api" target="_blank">
+    <img alt="AtomGit G-Star" src="https://atomgit.com/QuantumNous/new-api/star/new_badge.svg" width="250" height="55" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-key-features">Key Features</a> •
+  <a href="#-deployment">Deployment</a> •
+  <a href="#-documentation">Documentation</a> •
+  <a href="#-help-support">Help</a>
+</p>
+
+</div>
+
+## 📝 Project Description
+
+> [!IMPORTANT]
+> - This project is intended solely for lawful and authorized AI API gateway, organization-level authentication, multi-model management, usage analytics, cost accounting, and private deployment scenarios.
+> - Users must lawfully obtain upstream API keys, accounts, model services, and interface permissions, and must comply with upstream terms of service and applicable laws and regulations.
+> - Users should ensure their use complies with upstream terms of service and applicable laws and regulations.
+> - When providing generative AI services to the public, users should comply with applicable regulatory requirements and fulfill all filing, licensing, content safety, real-name verification, log retention, tax, and upstream authorization obligations required by their jurisdiction.
 
 ---
 
-*Formerly known as Moltbot, formerly known as Clawdbot*
+## 🤝 Trusted Partners
+
+<p align="center">
+  <em>No particular order</em>
+</p>
+
+<p align="center">
+  <a href="https://www.cherry-ai.com/" target="_blank">
+    <img src="./docs/images/cherry-studio.png" alt="Cherry Studio" height="80" />
+  </a><!--
+  --><a href="https://github.com/iOfficeAI/AionUi/" target="_blank">
+    <img src="./docs/images/aionui.png" alt="Aion UI" height="80" />
+  </a><!--
+  --><a href="https://bda.pku.edu.cn/" target="_blank">
+    <img src="./docs/images/pku.png" alt="Peking University" height="80" />
+  </a><!--
+  --><a href="https://www.compshare.cn/?ytag=GPU_yy_gh_newapi" target="_blank">
+    <img src="./docs/images/ucloud.png" alt="UCloud" height="80" />
+  </a><!--
+  --><a href="https://www.aliyun.com/" target="_blank">
+    <img src="./docs/images/aliyun.png" alt="Alibaba Cloud" height="80" />
+  </a><!--
+  --><a href="https://io.net/" target="_blank">
+    <img src="./docs/images/io-net.png" alt="IO.NET" height="80" />
+  </a>
+</p>
+
+---
+
+## 🙏 Special Thanks
+
+<p align="center">
+  <a href="https://www.jetbrains.com/?from=new-api" target="_blank">
+    <img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" alt="JetBrains Logo" width="120" />
+  </a>
+</p>
+
+<p align="center">
+  <strong>Thanks to <a href="https://www.jetbrains.com/?from=new-api">JetBrains</a> for providing free open-source development license for this project</strong>
+</p>
+
+---
+
+## 🚀 Quick Start
+
+### Using Docker Compose (Recommended)
+
+```bash
+# Clone the project
+git clone https://github.com/QuantumNous/new-api.git
+cd new-api
+
+# Edit docker-compose.yml configuration
+nano docker-compose.yml
+
+# Start the service
+docker-compose up -d
+```
+
+<details>
+<summary><strong>Using Docker Commands</strong></summary>
+
+```bash
+# Pull the latest image
+docker pull calciumion/new-api:latest
+
+# Using SQLite (default)
+docker run --name new-api -d --restart always \
+  -p 3000:3000 \
+  -e TZ=Asia/Shanghai \
+  -v ./data:/data \
+  calciumion/new-api:latest
+
+# Using MySQL
+docker run --name new-api -d --restart always \
+  -p 3000:3000 \
+  -e SQL_DSN="root:123456@tcp(localhost:3306)/oneapi" \
+  -e TZ=Asia/Shanghai \
+  -v ./data:/data \
+  calciumion/new-api:latest
+```
+
+> **💡 Tip:** `-v ./data:/data` will save data in the `data` folder of the current directory, you can also change it to an absolute path like `-v /your/custom/path:/data`
+
+</details>
+
+---
+
+🎉 After deployment is complete, visit `http://localhost:3000` to start using!
+
+> [!WARNING]
+> When operating this project as a public generative AI service or API resale service, users should first complete all required filing, licensing, content safety, real-name verification, log retention, tax, payment, and upstream authorization obligations.
+
+📖 For more deployment methods, please refer to [Deployment Guide](https://docs.newapi.pro/en/docs/installation)
+
+---
+
+## 📚 Documentation
+
+<div align="center">
+
+### 📖 [Official Documentation](https://docs.newapi.pro/en/docs) | [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/QuantumNous/new-api)
+
+</div>
+
+**Quick Navigation:**
+
+| Category | Link |
+|------|------|
+| 🚀 Deployment Guide | [Installation Documentation](https://docs.newapi.pro/en/docs/installation) |
+| ⚙️ Environment Configuration | [Environment Variables](https://docs.newapi.pro/en/docs/installation/config-maintenance/environment-variables) |
+| 📡 API Documentation | [API Documentation](https://docs.newapi.pro/en/docs/api) |
+| ❓ FAQ | [FAQ](https://docs.newapi.pro/en/docs/support/faq) |
+| 💬 Community Interaction | [Communication Channels](https://docs.newapi.pro/en/docs/support/community-interaction) |
+
+---
+
+## ✨ Key Features
+
+> For detailed features, please refer to [Features Introduction](https://docs.newapi.pro/en/docs/guide/wiki/basic-concepts/features-introduction)
+
+### 🎨 Core Functions
+
+| Feature | Description |
+|------|------|
+| 🎨 New UI | Modern user interface design |
+| 🌍 Multi-language | Supports Simplified Chinese, Traditional Chinese, English, French, Japanese |
+| 🔄 Data Compatibility | Fully compatible with the original One API database |
+| 📈 Data Dashboard | Visual console and statistical analysis |
+| 🔒 Permission Management | Token grouping, model restrictions, user management |
+
+### 💰 Authorized Usage Accounting and Billing
+
+- ✅ Internal top-up and quota allocation for lawful authorized scenarios (EPay, Stripe)
+- ✅ Organization-level per-request, usage-based, and cache-hit cost accounting
+- ✅ Cache billing statistics for OpenAI, Azure, DeepSeek, Claude, Qwen, and supported models
+- ✅ Flexible billing policies for internal management or authorized enterprise customers
+
+### 🔐 Authorization and Security
+
+- 😈 Discord authorization login
+- 🤖 LinuxDO authorization login
+- 📱 Telegram authorization login
+- 🔑 OIDC unified authentication
+- 🔍 Key quota query usage (with [new-api-key-tool](https://github.com/Calcium-Ion/new-api-key-tool))
+
+### 🚀 Advanced Features
+
+**API Format Support:**
+- ⚡ [OpenAI Responses](https://docs.newapi.pro/en/docs/api/ai-model/chat/openai/create-response)
+- ⚡ [OpenAI Realtime API](https://docs.newapi.pro/en/docs/api/ai-model/realtime/create-realtime-session) (including Azure)
+- ⚡ [Claude Messages](https://docs.newapi.pro/en/docs/api/ai-model/chat/create-message)
+- ⚡ [Google Gemini](https://doc.newapi.pro/en/api/google-gemini-chat)
+- 🔄 [Rerank Models](https://docs.newapi.pro/en/docs/api/ai-model/rerank/create-rerank) (Cohere, Jina)
+
+**Intelligent Routing:**
+- ⚖️ Channel weighted random
+- 🔄 Automatic retry on failure
+- 🚦 User-level model rate limiting
+
+**Format Conversion:**
+- 🔄 **OpenAI Compatible ⇄ Claude Messages**
+- 🔄 **OpenAI Compatible → Google Gemini**
+- 🔄 **Google Gemini → OpenAI Compatible** - Text only, function calling not supported yet
+- 🚧 **OpenAI Compatible ⇄ OpenAI Responses** - In development
+- 🔄 **Thinking-to-content functionality**
+
+**Reasoning Effort Support:**
+
+<details>
+<summary>View detailed configuration</summary>
+
+**OpenAI series models:**
+- `o3-mini-high` - High reasoning effort
+- `o3-mini-medium` - Medium reasoning effort
+- `o3-mini-low` - Low reasoning effort
+- `gpt-5-high` - High reasoning effort
+- `gpt-5-medium` - Medium reasoning effort
+- `gpt-5-low` - Low reasoning effort
+
+**Claude thinking models:**
+- `claude-3-7-sonnet-20250219-thinking` - Enable thinking mode
+
+**Google Gemini series models:**
+- `gemini-2.5-flash-thinking` - Enable thinking mode
+- `gemini-2.5-flash-nothinking` - Disable thinking mode
+- `gemini-2.5-pro-thinking` - Enable thinking mode
+- `gemini-2.5-pro-thinking-128` - Enable thinking mode with thinking budget of 128 tokens
+- You can also append `-low`, `-medium`, or `-high` to any Gemini model name to request the corresponding reasoning effort (no extra thinking-budget suffix needed).
+
+</details>
+
+---
+
+## 🤖 Model Support
+
+> For details, please refer to [API Documentation - Gateway Interface](https://docs.newapi.pro/en/docs/api)
+
+| Model Type | Description | Documentation |
+|---------|------|------|
+| 🤖 OpenAI-Compatible | OpenAI compatible models | [Documentation](https://docs.newapi.pro/en/docs/api/ai-model/chat/openai/createchatcompletion) |
+| 🤖 OpenAI Responses | OpenAI Responses format | [Documentation](https://docs.newapi.pro/en/docs/api/ai-model/chat/openai/createresponse) |
+| 🎨 Midjourney-Proxy | [Midjourney-Proxy(Plus)](https://github.com/novicezk/midjourney-proxy) | [Documentation](https://doc.newapi.pro/api/midjourney-proxy-image) |
+| 🎵 Suno-API | [Suno API](https://github.com/Suno-API/Suno-API) | [Documentation](https://doc.newapi.pro/api/suno-music) |
+| 🔄 Rerank | Cohere, Jina | [Documentation](https://docs.newapi.pro/en/docs/api/ai-model/rerank/creatererank) |
+| 💬 Claude | Messages format | [Documentation](https://docs.newapi.pro/en/docs/api/ai-model/chat/createmessage) |
+| 🌐 Gemini | Google Gemini format | [Documentation](https://docs.newapi.pro/en/docs/api/ai-model/chat/gemini/geminirelayv1beta) |
+| 🔧 Dify | ChatFlow mode | - |
+| 🎯 Custom upstream | Supports configuring legally authorized upstream endpoints | - |
+
+### 📡 Supported Interfaces
+
+<details>
+<summary>View complete interface list</summary>
+
+- [Chat Interface (Chat Completions)](https://docs.newapi.pro/en/docs/api/ai-model/chat/openai/createchatcompletion)
+- [Response Interface (Responses)](https://docs.newapi.pro/en/docs/api/ai-model/chat/openai/createresponse)
+- [Image Interface (Image)](https://docs.newapi.pro/en/docs/api/ai-model/images/openai/post-v1-images-generations)
+- [Audio Interface (Audio)](https://docs.newapi.pro/en/docs/api/ai-model/audio/openai/create-transcription)
+- [Video Interface (Video)](https://docs.newapi.pro/en/docs/api/ai-model/audio/openai/createspeech)
+- [Embedding Interface (Embeddings)](https://docs.newapi.pro/en/docs/api/ai-model/embeddings/createembedding)
+- [Rerank Interface (Rerank)](https://docs.newapi.pro/en/docs/api/ai-model/rerank/creatererank)
+- [Realtime Conversation (Realtime)](https://docs.newapi.pro/en/docs/api/ai-model/realtime/createrealtimesession)
+- [Claude Chat](https://docs.newapi.pro/en/docs/api/ai-model/chat/createmessage)
+- [Google Gemini Chat](https://docs.newapi.pro/en/docs/api/ai-model/chat/gemini/geminirelayv1beta)
+
+</details>
+
+---
+
+## 🚢 Deployment
+
+> [!TIP]
+> **Latest Docker image:** `calciumion/new-api:latest`
+
+### 📋 Deployment Requirements
+
+| Component | Requirement |
+|------|------|
+| **Local database** | SQLite (Docker must mount `/data` directory)|
+| **Remote database** | MySQL ≥ 5.7.8 or PostgreSQL ≥ 9.6 |
+| **Container engine** | Docker / Docker Compose |
+| **System architecture** | 64-bit only (amd64 / arm64); 32-bit systems are not supported |
+
+### ⚙️ Environment Variable Configuration
+
+<details>
+<summary>Common environment variable configuration</summary>
+
+| Variable Name | Description | Default Value |
+|--------|------|--------|
+| `SESSION_SECRET` | Authentication signing secret; must be identical on every node | - |
+| `SESSION_COOKIE_SECURE` | `false`/unset disables the refresh/logout OriginGuard for local HTTP dev proxies; `true` enables the Secure cookie and strict Origin checks | `false` |
+| `SESSION_COOKIE_TRUSTED_URL` | Required with Secure mode: comma-separated exact HTTPS Origins allowed to call refresh/logout; not a relay CORS allowlist | - |
+| `TRUSTED_PROXIES` | Unset/blank trusts loopback, RFC 1918 and IPv6 ULA with a startup warning; `none` trusts no proxies; an explicit proxy IP/CIDR list replaces the defaults | `127.0.0.0/8, ::1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7` |
+| `USER_SESSION_ACTIVE_LIMIT` | Maximum active login Sessions per user | `50` |
+| `USER_SESSION_ISSUANCE_LIMIT` | Maximum Sessions created per user within the issuance window, including revoked Sessions | `100` |
+| `USER_SESSION_ISSUANCE_WINDOW_SECONDS` | Per-user Session issuance window; clamped to the revoked retention period when configured higher | `86400` |
+| `USER_SESSION_REVOKED_RETENTION_DAYS` | Days to retain revoked Session rows for audit and issuance accounting | `7` |
+| `USER_SESSION_HOURLY_ALERT_THRESHOLD` | Global Sessions created per hour that triggers an alert only; it never blocks login | `5000` |
+| `CRYPTO_SECRET` | HMAC secret for cache keys; nodes sharing Redis must use the same effective value | Defaults to `SESSION_SECRET` |
+| `SQL_DSN` | Database connection string | - |
+| `REDIS_CONN_STRING` | Redis connection string | - |
+| `RELAY_IDLE_CONN_TIMEOUT` | Idle keep-alive timeout for relay HTTP clients, seconds. Defaults to Go standard library behavior; set `0` to disable | `90` |
+| `STREAMING_TIMEOUT` | Streaming timeout (seconds) | `300` |
+| `STREAM_SCANNER_MAX_BUFFER_MB` | Max per-line buffer (MB) for the stream scanner; increase when upstream sends huge image/base64 payloads | `64` |
+| `MAX_REQUEST_BODY_MB` | Max request body size (MB, counted **after decompression**; prevents huge requests/zip bombs from exhausting memory). Exceeding it returns `413` | `32` |
+| `AZURE_DEFAULT_API_VERSION` | Azure API version | `2025-04-01-preview` |
+| `ERROR_LOG_ENABLED` | Error log switch | `false` |
+| `PYROSCOPE_URL` | Pyroscope server address | - |
+| `PYROSCOPE_APP_NAME` | Pyroscope application name | `new-api` |
+| `PYROSCOPE_BASIC_AUTH_USER` | Pyroscope basic auth user | - |
+| `PYROSCOPE_BASIC_AUTH_PASSWORD` | Pyroscope basic auth password | - |
+| `PYROSCOPE_MUTEX_RATE` | Pyroscope mutex sampling rate | `5` |
+| `PYROSCOPE_BLOCK_RATE` | Pyroscope block sampling rate | `5` |
+| `HOSTNAME` | Hostname tag for Pyroscope | `new-api` |
+
+📖 **Complete configuration:** [Environment Variables Documentation](https://docs.newapi.pro/en/docs/installation/config-maintenance/environment-variables)
+
+</details>
+
+### 🔧 Deployment Methods
+
+<details>
+<summary><strong>Method 1: Docker Compose (Recommended)</strong></summary>
+
+```bash
+# Clone the project
+git clone https://github.com/QuantumNous/new-api.git
+cd new-api
+
+# Edit configuration
+nano docker-compose.yml
+
+# Start service
+docker-compose up -d
+```
+
+</details>
+
+<details>
+<summary><strong>Method 2: Docker Commands</strong></summary>
+
+**Using SQLite:**
+```bash
+docker run --name new-api -d --restart always \
+  -p 3000:3000 \
+  -e TZ=Asia/Shanghai \
+  -v ./data:/data \
+  calciumion/new-api:latest
+```
+
+**Using MySQL:**
+```bash
+docker run --name new-api -d --restart always \
+  -p 3000:3000 \
+  -e SQL_DSN="root:123456@tcp(localhost:3306)/oneapi" \
+  -e TZ=Asia/Shanghai \
+  -v ./data:/data \
+  calciumion/new-api:latest
+```
+
+> **💡 Path explanation:**
+> - `./data:/data` - Relative path, data saved in the data folder of the current directory
+> - You can also use absolute path, e.g.: `/your/custom/path:/data`
+
+</details>
+
+<details>
+<summary><strong>Method 3: BaoTa Panel</strong></summary>
+
+1. Install BaoTa Panel (≥ 9.2.0 version)
+2. Search for **New-API** in the application store
+3. One-click installation
+
+📖 [Tutorial with images](./docs/BT.md)
+
+</details>
+
+### ⚠️ Multi-machine Deployment Considerations
+
+> [!WARNING]
+> - All nodes must use the same primary database and the same `SESSION_SECRET`; otherwise Access Tokens, refresh sessions, and temporary authentication flows cannot be verified consistently.
+> - Nodes connected to the same Redis must also use the same `CRYPTO_SECRET`, or their cache-key digests will differ and shared entries cannot be reused consistently.
+
+The database is authoritative for login Sessions and for the per-user active/issuance limits. Redis Session entries are short-lived caches whose TTL follows `SYNC_FREQUENCY` (60 seconds by default) and never exceeds the Session's remaining lifetime.
+
+| Redis topology | Session propagation | Rate limiting |
+| --- | --- | --- |
+| Shared Redis | Revocations and version publications normally propagate immediately | Redis limits are shared across nodes |
+| Independent Redis per node | Nodes converge from the database within the effective `SYNC_FREQUENCY`; a newly rotated token may receive a temporary 401 on a node with stale cache | Each node has its own allowance, so aggregate capacity can reach roughly the configured limit multiplied by the node count |
+| No Redis | Every Session validation reads the database | In-memory limits are independent per node |
+
+A shorter `SYNC_FREQUENCY` reduces the independent-Redis staleness window but causes one additional primary-key Session lookup per active SID, per node, per TTL. These guarantees make Session authentication bounded-stale across the supported topologies; rate limits and other Redis-backed control-plane caches remain topology-dependent.
+
+See [User authentication and login sessions](./docs/authentication.md) for the token, Origin-check and PAT contracts.
+
+### 🔄 Channel Retry and Cache
+
+**Retry configuration:** `Settings → Operation Settings → General Settings → Failure Retry Count`
+
+**Cache configuration:**
+- `REDIS_CONN_STRING`: Redis cache (recommended)
+- `MEMORY_CACHE_ENABLED`: Memory cache
+
+---
+
+## 🔗 Related Projects
+
+### Upstream Projects
+
+| Project | Description |
+|------|------|
+| [One API](https://github.com/songquanpeng/one-api) | Original project base |
+| [Midjourney-Proxy](https://github.com/novicezk/midjourney-proxy) | Midjourney interface support |
+
+### Supporting Tools
+
+| Project | Description |
+|------|------|
+| [new-api-key-tool](https://github.com/Calcium-Ion/new-api-key-tool) | Key quota query tool |
+| [new-api-horizon](https://github.com/Calcium-Ion/new-api-horizon) | New API high-performance optimized version |
+
+---
+
+## 💬 Help Support
+
+### 📖 Documentation Resources
+
+| Resource | Link |
+|------|------|
+| 📘 FAQ | [FAQ](https://docs.newapi.pro/en/docs/support/faq) |
+| 💬 Community Interaction | [Communication Channels](https://docs.newapi.pro/en/docs/support/community-interaction) |
+| 🐛 Issue Feedback | [Issue Feedback](https://docs.newapi.pro/en/docs/support/feedback-issues) |
+| 📚 Complete Documentation | [Official Documentation](https://docs.newapi.pro/en/docs) |
+
+### 🤝 Contribution Guide
+
+Welcome all forms of contribution!
+
+- 🐛 Report Bugs
+- 💡 Propose New Features
+- 📝 Improve Documentation
+- 🔧 Submit Code
+
+---
+
+## 📜 License
+
+This project is licensed under the [GNU Affero General Public License v3.0 (AGPLv3)](./LICENSE).
+
+Additional terms under AGPLv3 Section 7 apply. Modified versions must preserve
+the author attribution notice `Frontend design and development by New API
+contributors.` in the appropriate legal notices and in any prominent about,
+legal, footer, or attribution location presented by the user interface.
+
+Modified versions that present a user interface must also preserve a visible
+link to the original project: <https://github.com/QuantumNous/new-api>.
+
+This is an open-source project developed based on [One API](https://github.com/songquanpeng/one-api) (MIT License).
+
+If your organization's policies do not permit the use of AGPLv3-licensed software, or if you wish to avoid the open-source obligations of AGPLv3, please contact us at: [support@quantumnous.com](mailto:support@quantumnous.com)
+
+---
+
+## 🌟 Star History
+
+<div align="center">
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Calcium-Ion/new-api&type=Date)](https://star-history.com/#Calcium-Ion/new-api&Date)
+
+</div>
+
+---
+
+<div align="center">
+
+### 💖 Thank you for using New API
+
+If this project is helpful to you, welcome to give us a ⭐️ Star！
+
+**[Official Documentation](https://docs.newapi.pro/en/docs)** • **[Issue Feedback](https://github.com/Calcium-Ion/new-api/issues)** • **[Latest Release](https://github.com/Calcium-Ion/new-api/releases)**
+
+<sub>Built with ❤️ by QuantumNous</sub>
+
+</div>
