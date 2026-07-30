@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const net = require('node:net');
 
@@ -44,4 +45,11 @@ test('desktop runtime allocates a usable loopback port instead of assuming port 
   assert.ok(Number.isInteger(port));
   assert.ok(port > 0);
   await new Promise((resolve) => server.close(resolve));
+});
+
+test('desktop package includes the runtime module required by main process', () => {
+  const packagePath = path.join(__dirname, '..', 'package.json');
+  const packageDefinition = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+  assert.ok(packageDefinition.build.files.includes('desktop-runtime.js'));
 });

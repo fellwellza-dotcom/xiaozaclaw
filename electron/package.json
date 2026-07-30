@@ -39,6 +39,7 @@
     },
     "files": [
       "main.js",
+      "desktop-runtime.js",
       "preload.js",
       "icon.png",
       "tray-iconTemplate.png",
