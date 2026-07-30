@@ -55,6 +55,11 @@ export function useSidebarData(): SidebarData {
         title: t('Chat'),
         items: [
           {
+            title: t('AI workspace'),
+            url: '/workspace',
+            icon: MessageSquare,
+          },
+          {
             title: t('Playground'),
             url: '/playground',
             icon: FlaskConical,
