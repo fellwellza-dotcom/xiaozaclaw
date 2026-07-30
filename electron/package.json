@@ -9,7 +9,8 @@
     "build": "electron-builder",
     "build:mac": "electron-builder --mac",
     "build:win": "electron-builder --win",
-    "build:linux": "electron-builder --linux"
+    "build:linux": "electron-builder --linux",
+    "test:desktop": "node --test test/desktop-runtime.test.js"
   },
   "keywords": [
     "ai",
@@ -31,6 +32,7 @@
   "build": {
     "appId": "com.newapi.desktop",
     "productName": "New-API-App",
+    "artifactName": "xiaozaclaw-new-api-${version}-setup.${ext}",
     "publish": null,
     "directories": {
       "output": "dist"
@@ -85,8 +87,7 @@
     "win": {
       "icon": "icon.png",
       "target": [
-        "nsis",
-        "portable"
+        "nsis"
       ],
       "extraResources": [
         {

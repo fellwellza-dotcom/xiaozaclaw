@@ -1,141 +1,118 @@
-name: Build Electron App
+name: Build xiaozaclaw Windows installer
 
 on:
+  workflow_dispatch:
   push:
     tags:
-      - '*'  # Triggers on version tags like v1.0.0
-      - '!*-*'  # Ignore pre-release tags like v1.0.0-beta
-      - '!*-alpha*' # Ignore alpha tags like v1.0.0-alpha
-  workflow_dispatch:  # Allows manual triggering
+      - 'xiaozaclaw-v*'
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        # os: [macos-latest, windows-latest]
-        os: [windows-latest]
-
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
+  build-windows-installer:
+    name: Build self-contained Windows installer
+    runs-on: windows-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout code
+      - name: Check out source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
-      - name: Setup Bun
+      - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: latest
+          bun-version: '1.3.14'
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: electron/package-lock.json
 
-      - name: Setup Go
+      - name: Set up Go
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: '>=1.25.1'
+          go-version-file: go.mod
 
-      - name: Build frontend
-        env:
-          CI: ""
-          NODE_OPTIONS: "--max-old-space-size=4096"
+      - name: Resolve product version
+        id: version
+        shell: pwsh
         run: |
-          cd web
+          if ('${{ github.ref_type }}' -eq 'tag') {
+            $version = '${{ github.ref_name }}'.Replace('xiaozaclaw-v', '')
+          } else {
+            $version = "0.0.0-dev.$env:GITHUB_RUN_NUMBER"
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "VITE_REACT_APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build embedded web interface
+        working-directory: web
+        env:
+          CI: ''
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
           bun install --frozen-lockfile
-          DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION=$(git describe --tags) bun run build
-          cd ..
+          bun run build
 
-      # - name: Build Go binary (macos/Linux)
-      #   if: runner.os != 'Windows'
-      #   run: |
-      #     go mod download
-      #     go build -ldflags "-s -w -X 'new-api/common.Version=$(git describe --tags)' -extldflags '-static'" -o new-api
-
-      - name: Build Go binary (Windows)
-        if: runner.os == 'Windows'
+      - name: Build bundled local service
+        shell: pwsh
         run: |
           go mod download
-          go build -ldflags "-s -w -X 'new-api/common.Version=$(git describe --tags)'" -o new-api.exe
+          go build -trimpath -ldflags "-s -w -X 'new-api/common.Version=${{ steps.version.outputs.version }}'" -o new-api.exe
 
-      - name: Update Electron version
+      - name: Install Electron build dependencies
+        working-directory: electron
+        run: npm ci
+
+      - name: Verify desktop runtime policy
+        working-directory: electron
+        run: npm run test:desktop
+
+      - name: Package the installer
+        working-directory: electron
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         run: |
-          cd electron
-          VERSION=$(git describe --tags)
-          VERSION=${VERSION#v}  # Remove 'v' prefix if present
-          # Convert to valid semver: take first 3 components and convert rest to prerelease format
-          # e.g., 0.9.3-patch.1 -> 0.9.3-patch.1
-          if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(.*)$ ]]; then
-            MAJOR=${BASH_REMATCH[1]}
-            MINOR=${BASH_REMATCH[2]}
-            PATCH=${BASH_REMATCH[3]}
-            REST=${BASH_REMATCH[4]}
-          
-            VERSION="$MAJOR.$MINOR.$PATCH"
-          
-            # If there's extra content, append it without adding -dev
-            if [[ -n "$REST" ]]; then
-              VERSION="$VERSION$REST"
-            fi
-          fi
-          npm version $VERSION --no-git-tag-version --allow-same-version
-
-      - name: Install Electron dependencies
-        run: |
-          cd electron
-          npm install
-
-      # - name: Build Electron app (macOS)
-      #   if: runner.os == 'macOS'
-      #   run: |
-      #     cd electron
-      #     npm run build:mac
-      #   env:
-      #     CSC_IDENTITY_AUTO_DISCOVERY: false  # Skip code signing
-
-      - name: Build Electron app (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          cd electron
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version --allow-same-version
           npm run build:win
 
-      # - name: Upload artifacts (macOS)
-      #   if: runner.os == 'macOS'
-      #   uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      #   with:
-      #     name: macos-build
-      #     path: |
-      #       electron/dist/*.dmg
-      #       electron/dist/*.zip
+      - name: Create installer checksum
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -Path electron/dist -Filter 'xiaozaclaw-new-api-*-setup.exe' | Select-Object -First 1
+          if ($null -eq $installer) { throw 'Expected NSIS installer was not produced.' }
+          $hash = Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256
+          "$($hash.Hash.ToLowerInvariant())  $($installer.Name)" | Out-File -FilePath electron/dist/checksums-windows.txt -Encoding ascii
 
-      - name: Upload artifacts (Windows)
-        if: runner.os == 'Windows'
+      - name: Upload installer artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: windows-build
+          name: xiaozaclaw-windows-installer
           path: |
-            electron/dist/*.exe
+            electron/dist/xiaozaclaw-new-api-*-setup.exe
+            electron/dist/checksums-windows.txt
+          if-no-files-found: error
 
   release:
-    needs: build
+    needs: build-windows-installer
+    if: startsWith(github.ref, 'refs/tags/xiaozaclaw-v')
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
-
     steps:
-      - name: Download all artifacts
+      - name: Download installer artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: xiaozaclaw-windows-installer
+          path: release
 
-      - name: Upload to Release
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
-          files: |
-            windows-build/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: release/*

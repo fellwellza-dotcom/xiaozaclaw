@@ -203,9 +203,10 @@ func main() {
 	if port == "" {
 		port = strconv.Itoa(*common.Port)
 	}
+	bindAddress := os.Getenv("BIND_ADDRESS")
 
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    bindAddress + ":" + port,
 		Handler: server,
 	}
 

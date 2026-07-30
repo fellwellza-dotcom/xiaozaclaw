@@ -3,12 +3,13 @@ const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
 const fs = require('fs');
+const { createDesktopServerEnvironment, findAvailableLoopbackPort } = require('./desktop-runtime');
 
 let mainWindow;
 let serverProcess;
 let tray = null;
 let serverErrorLogs = [];
-const PORT = 3000;
+let serverPort;
 const DEV_FRONTEND_PORT = 5173; // Rsbuild dev server port
 
 // 保存日志到文件并打开
@@ -70,9 +71,9 @@ function analyzeError(errorLogs) {
       allLogs.includes('listen tcp') && allLogs.includes('bind: address already in use')) {
     return {
       type: '端口被占用',
-      title: '端口 ' + PORT + ' 被占用',
+      title: '端口 ' + serverPort + ' 被占用',
       message: '无法启动服务器，端口已被其他程序占用',
-      solution: `可能的解决方案：\n\n1. 关闭占用端口 ${PORT} 的其他程序\n2. 检查是否已经运行了另一个 New API 实例\n3. 使用以下命令查找占用端口的进程：\n   Mac/Linux: lsof -i :${PORT}\n   Windows: netstat -ano | findstr :${PORT}\n4. 重启电脑以释放端口`
+      solution: `可能的解决方案：\n\n1. 关闭占用端口 ${serverPort} 的其他程序\n2. 检查是否已经运行了另一个 New API 实例\n3. 使用以下命令查找占用端口的进程：\n   Mac/Linux: lsof -i :${serverPort}\n   Windows: netstat -ano | findstr :${serverPort}\n4. 重启电脑以释放端口`
     };
   }
   
@@ -255,13 +256,11 @@ function startServer() {
     }
 
     // 生产模式：启动二进制服务器
-    const env = { ...process.env, PORT: PORT.toString() };
-
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    env.SQLITE_PATH = path.join(dataDir, 'new-api.db');
+    const env = createDesktopServerEnvironment(process.env, serverPort, dataDir);
     
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📁 您的数据存储位置：');
@@ -373,9 +372,9 @@ function startServer() {
       }
     });
 
-    checkServerAvailability(PORT)
+    checkServerAvailability(serverPort)
       .then(() => {
-        console.log('✓ Backend server is accessible on port 3000');
+        console.log(`✓ Backend server is accessible on port ${serverPort}`);
         resolve();
       })
       .catch((err) => {
@@ -387,7 +386,7 @@ function startServer() {
 
 function createWindow() {
   const isDev = process.env.NODE_ENV === 'development';
-  const loadPort = isDev ? DEV_FRONTEND_PORT : PORT;
+  const loadPort = isDev ? DEV_FRONTEND_PORT : serverPort;
   
   mainWindow = new BrowserWindow({
     width: 1080,
@@ -397,7 +396,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true
     },
-    title: 'New API',
+    title: 'New API | xiaozaclaw',
     icon: path.join(__dirname, 'icon.png')
   });
 
@@ -476,6 +475,9 @@ function createTray() {
 
 app.whenReady().then(async () => {
   try {
+    if (process.env.NODE_ENV !== 'development') {
+      serverPort = await findAvailableLoopbackPort();
+    }
     await startServer();
     createTray();
     createWindow();

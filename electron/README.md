@@ -1,10 +1,12 @@
 # New API Electron Desktop App
 
-This directory contains the Electron wrapper for New API, providing a native desktop application with system tray support for Windows, macOS, and Linux.
+This directory contains the Electron wrapper for the xiaozaclaw new-api desktop edition. The released Windows installer includes Electron, the compiled Go service, the embedded web interface, and a local SQLite database. End users do not install Go, Bun, Docker, WSL, PostgreSQL, or Redis.
+
+The application keeps its data under the Windows application-data directory. The bundled service chooses a local port at startup and binds only to `127.0.0.1`.
 
 ## Prerequisites
 
-### 1. Go Binary (Required)
+### 1. Go Binary (Required for contributors only)
 The Electron app requires the compiled Go binary to function. You have two options:
 
 **Option A: Use existing binary (without Go installed)**
@@ -16,7 +18,7 @@ cp ../new-api-macos ../new-api
 **Option B: Build from source (requires Go)**
 TODO
 
-### 2. Electron Dependencies
+### 2. Electron Dependencies (Required for contributors only)
 ```bash
 cd electron
 npm install
