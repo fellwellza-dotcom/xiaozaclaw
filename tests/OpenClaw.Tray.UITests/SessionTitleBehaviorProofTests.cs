@@ -68,7 +68,7 @@ public sealed class SessionTitleBehaviorProofTests
         string expectedSessionKey,
         ICollection<string> proof)
     {
-        InvokeOpenChat(visibleTitle);
+        InvokeOpenChat(expectedSessionKey);
         var routeTitle = $"Route target: {expectedSessionKey}";
         var selectedRouteTitle = WaitForSelectedSession(routeTitle);
         proof.Add(
@@ -96,22 +96,15 @@ public sealed class SessionTitleBehaviorProofTests
                 .Select(index => matches[index].Current.Name));
     }
 
-    private void InvokeOpenChat(string visibleTitle)
+    private void InvokeOpenChat(string sessionKey)
     {
-        var titleCondition = new AndCondition(
-            new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Text),
-            new PropertyCondition(AutomationElement.NameProperty, visibleTitle));
-        var hub = AutomationElement.FromHandle(_app.HubWindowHandle);
-        var titleElement = hub.FindFirst(TreeScope.Descendants, titleCondition);
-        Assert.NotNull(titleElement);
-
-        var row = FindAncestor(titleElement!, ControlType.ListItem);
-        Assert.NotNull(row);
-
         var buttonCondition = new AndCondition(
             new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button),
-            new PropertyCondition(AutomationElement.NameProperty, "Open in chat"));
-        var button = row!.FindFirst(TreeScope.Descendants, buttonCondition);
+            new PropertyCondition(
+                AutomationElement.AutomationIdProperty,
+                $"SessionOpenChat:{sessionKey}"));
+        var hub = AutomationElement.FromHandle(_app.HubWindowHandle);
+        var button = hub.FindFirst(TreeScope.Descendants, buttonCondition);
         Assert.NotNull(button);
         Assert.True(button!.TryGetCurrentPattern(InvokePattern.Pattern, out var pattern));
         Assert.IsType<InvokePattern>(pattern).Invoke();
@@ -153,23 +146,6 @@ public sealed class SessionTitleBehaviorProofTests
         }, $"chat Session selector to choose '{expectedRouteTitle}'");
 
         return Assert.IsType<string>(selectedRouteTitle);
-    }
-
-    private static AutomationElement? FindAncestor(
-        AutomationElement element,
-        ControlType controlType)
-    {
-        var walker = TreeWalker.ControlViewWalker;
-        var current = element;
-        for (var depth = 0; depth < 12; depth++)
-        {
-            if (current.Current.ControlType == controlType)
-                return current;
-            current = walker.GetParent(current);
-            if (current is null)
-                return null;
-        }
-        return null;
     }
 
     private static void WaitUntil(Func<bool> predicate, string description)

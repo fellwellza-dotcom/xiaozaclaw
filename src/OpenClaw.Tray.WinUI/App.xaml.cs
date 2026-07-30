@@ -286,17 +286,7 @@ public partial class App : Application, OpenClawTray.Services.IAppCommands
         WaitForRestartSourceIfRequested(Environment.GetCommandLineArgs());
         StartupInputConfigurator.Configure();
 
-        // Language override for localization testing (e.g., OPENCLAW_LANGUAGE=zh-CN)
-        var langOverride = Environment.GetEnvironmentVariable("OPENCLAW_LANGUAGE");
-        if (!string.IsNullOrEmpty(langOverride))
-        {
-            // SECURITY: Whitelist known locale codes to prevent locale injection
-            string[] allowedLocales = ["en-us", "fr-fr", "nl-nl", "zh-cn", "zh-tw"];
-            if (allowedLocales.Contains(langOverride.ToLowerInvariant()))
-                LocalizationHelper.SetLanguageOverride(langOverride);
-            else
-                Logger.Warn($"[App] Ignoring invalid OPENCLAW_LANGUAGE value: {langOverride}");
-        }
+        LocalizationBootstrap.Configure(AppIdentity.IsXiaozaClaw);
 
         // Wire the GatewayHostAccess localization indirection to LocalizationHelper.
         // The classifier defaults to identity (returns the resource key as-is) for unit-test

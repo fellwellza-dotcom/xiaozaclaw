@@ -189,6 +189,7 @@
                                                     Style="{StaticResource AccentButtonStyle}"
                                                     x:Uid="SessionsPage_OpenChatButton" Content="Open chat"
                                                     ToolTipService.ToolTip="Open this session in Chat"
+                                                    AutomationProperties.AutomationId="{Binding OpenChatAutomationId}"
                                                     AutomationProperties.Name="Open in chat"/>
                                             <Button Tag="{Binding Key}"
                                                     IsEnabled="{Binding CanEdit}"

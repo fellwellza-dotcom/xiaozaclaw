@@ -65,6 +65,8 @@ public sealed partial class SetupWindow : Window
         Title = Branding.SetupTitle;
         SetupTitleText.Text = Branding.SetupTitle;
         Active = this;
+        if (Branding.UseSimplifiedChinese)
+            RootFrame.Navigated += ApplyProductLocalization;
 
         Closed += async (_, _) =>
         {
@@ -184,6 +186,14 @@ public sealed partial class SetupWindow : Window
             NavigateToGatewayInstalledMilestone();
         else
             NavigateTo(typeof(SecurityNoticePage), _config);
+    }
+
+    private void ApplyProductLocalization(
+        object sender,
+        Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    {
+        if (e.Content is FrameworkElement element)
+            SetupTextLocalizer.Attach(element, Branding, _config);
     }
 
     public void NavigateToSecurityNotice(bool back = false) => NavigateTo(typeof(SecurityNoticePage), _config, back);

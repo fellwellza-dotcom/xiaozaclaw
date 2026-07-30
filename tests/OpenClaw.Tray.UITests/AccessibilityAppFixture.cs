@@ -83,6 +83,11 @@ public sealed class AccessibilityAppFixture : IDisposable
 
         EnsureTargetIsAlive();
         await WaitForPageMarkerAsync(pageTag, pageMarkerAutomationId);
+        // Navigation markers are attached before the functional UI renderer has
+        // finished replacing the previous page's controls. Let the visual and
+        // automation trees settle before an Axe scan observes them.
+        await Task.Delay(NavigationSettleTime);
+        EnsureTargetIsAlive();
     }
 
     public string? CaptureHubScreenshotIfRequested()

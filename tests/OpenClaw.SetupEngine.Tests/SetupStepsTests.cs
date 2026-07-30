@@ -1375,6 +1375,18 @@ public class SetupStepsTests : IDisposable
     }
 
     [Fact]
+    public void WslInstallSupport_ManualPlatformEnableInstructions_ProtectsExistingDistributions()
+    {
+        var message = WslInstallSupport.ManualPlatformEnableInstructions(1);
+
+        Assert.Contains("exit code 1", message);
+        Assert.Contains("existing WSL distributions were not removed", message);
+        Assert.Contains("Microsoft-Windows-Subsystem-Linux", message);
+        Assert.Contains("VirtualMachinePlatform", message);
+        Assert.Contains("Restart Windows", message);
+    }
+
+    [Fact]
     public async Task PreflightWsl_FailsTerminalWhenVirtualizationDisabledInFirmware()
     {
         var commands = new FakeCommandRunner(args =>

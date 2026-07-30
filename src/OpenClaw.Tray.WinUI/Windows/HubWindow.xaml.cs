@@ -1142,6 +1142,9 @@ public sealed partial class HubWindow : WindowEx
                 workspace.AgentId = _currentAgentId;
                 workspace.Initialize();
                 break;
+            case EnterpriseWorkbenchPage workbench:
+                workbench.Initialize();
+                break;
             case BindingsPage bindings: bindings.Initialize(); break;
             case SettingsPage settings: settings.Initialize(); break;
             case NotificationsPage notifications: notifications.Initialize(_appNotificationService); break;
@@ -1159,6 +1162,7 @@ public sealed partial class HubWindow : WindowEx
     private static Type? TagToPageType(string? tag) => tag switch
     {
         "chat" => typeof(ChatPage),
+        "workbench" => typeof(EnterpriseWorkbenchPage),
         "connection" => typeof(ConnectionPage),
         "channels" => typeof(ChannelsPage),
         "nodes" => typeof(InstancesPage),
@@ -1318,6 +1322,14 @@ public sealed partial class HubWindow : WindowEx
             new() { Icon = "🌐", Title = LocalizationHelper.GetString("Command_OpenDashboard_Title"), Subtitle = LocalizationHelper.GetString("Command_OpenDashboard_Subtitle"), Execute = () => ((IAppCommands)Application.Current).OpenDashboard(null) },
         };
 
+        commands.Insert(0, new CommandItem
+        {
+            Icon = "W",
+            Title = "企业工作台",
+            Subtitle = "从工作模板发起、审批和交付任务",
+            Tag = "workbench"
+        });
+
         if (DiagnosticsGate.IsVisible)
         {
             commands.Add(new CommandItem { Icon = "🐛", Title = LocalizationHelper.GetString("Command_GoToDiagnostics_Title"), Subtitle = LocalizationHelper.GetString("Command_GoToDiagnostics_Subtitle"), Tag = "debug" });
@@ -1405,6 +1417,7 @@ public sealed partial class HubWindow : WindowEx
     private static readonly Dictionary<string, string> s_highContrastGlyphFallback = new()
     {
         { "chat",        "\uE8BD" },
+        { "workbench",   "\uE8F1" },
         { "connection",  "\uE839" },
         { "sessions",    "\uE8F2" },
         { "skills",      "\uE945" },

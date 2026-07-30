@@ -13,9 +13,12 @@
   #define MyOutputBaseFilename "xiaozaclaw"
   #define MyOutputSuffix ""
   #define MyAppPublisher "xiaozaclaw Project"
-  #define MyGatewayShortcut "xiaozaclaw Gateway Setup"
-  #define MySettingsShortcut "xiaozaclaw Settings"
-  #define MyChatShortcut "xiaozaclaw Chat"
+  #define MyGatewayShortcut "xiaozaclaw 网关设置"
+  #define MySettingsShortcut "xiaozaclaw 设置"
+  #define MyChatShortcut "xiaozaclaw 对话"
+  #define MyCheckUpdatesShortcut "检查更新"
+  #define MyStartupTaskDescription "Windows 启动时运行 xiaozaclaw"
+  #define MyStartupTaskGroup "开机启动："
 #else
   ; Pass /DDevBuild=1 to produce a side-by-side upstream dev installer.
   #ifdef DevBuild
@@ -46,6 +49,9 @@
   #define MyGatewayShortcut "OpenClaw Gateway Setup"
   #define MySettingsShortcut "OpenClaw Companion Settings"
   #define MyChatShortcut "OpenClaw Chat"
+  #define MyCheckUpdatesShortcut "Check for Updates"
+  #define MyStartupTaskDescription "Start OpenClaw when Windows starts"
+  #define MyStartupTaskGroup "Startup:"
 #endif
 #define MyAppURL "https://github.com/openclaw/openclaw-windows-node"
 #define MyAppExeName "OpenClaw.Tray.WinUI.exe"
@@ -96,7 +102,11 @@ ArchitecturesAllowed=x64
 #endif
 
 [Languages]
+#ifdef XiaozaBuild
+Name: "chinesesimp"; MessagesFile: "installer\third-party\ChineseSimplified.isl"
+#else
 Name: "english"; MessagesFile: "compiler:Default.isl"
+#endif
 
 ; publish folder should be passed via /Dpublish=publish-x64 or /Dpublish=publish-arm64
 #ifndef publish
@@ -119,7 +129,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "startupicon"; Description: "Start {#MyAppName} when Windows starts"; GroupDescription: "Startup:"; Flags: unchecked
+Name: "startupicon"; Description: "{#MyStartupTaskDescription}"; GroupDescription: "{#MyStartupTaskGroup}"; Flags: unchecked
 
 [Files]
 ; WinUI Tray app - include all files (WinUI needs DLLs, not single-file)
@@ -141,7 +151,7 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; AppUserModelID:
 Name: "{group}\{#MyGatewayShortcut}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://setup"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
 Name: "{group}\{#MySettingsShortcut}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://commandcenter"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
 Name: "{group}\{#MyChatShortcut}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://chat"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
-Name: "{group}\Check for Updates"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://check-updates"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
+Name: "{group}\{#MyCheckUpdatesShortcut}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "{#MyProtocol}://check-updates"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppAumid}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; AppUserModelID: "{#MyAppAumid}"
 Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: startupicon; AppUserModelID: "{#MyAppAumid}"

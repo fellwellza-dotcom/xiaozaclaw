@@ -81,4 +81,88 @@ public sealed class XiaozaBuildContractTests
         Assert.Contains("Branding = branding ?? SetupBranding.OpenClaw", setupWindow);
         Assert.Contains("SetupTitleText.Text = Branding.SetupTitle", setupWindow);
     }
+
+    [Fact]
+    public void XiaozaclawResources_CoverEveryUpstreamChineseKey()
+    {
+        var upstream = ReadResources(
+            "src", "OpenClaw.Tray.WinUI", "Strings", "zh-cn", "Resources.resw");
+        var xiaozaclaw = ReadResources(
+            "src", "OpenClaw.Tray.WinUI", "XiaozaclawStrings", "Resources.resw");
+
+        Assert.Equal(upstream.Keys.OrderBy(static key => key), xiaozaclaw.Keys.OrderBy(static key => key));
+        Assert.Equal("xiaozaclaw Windows 桌面助手", xiaozaclaw["TitleText.Text"]);
+        Assert.Equal("设置", xiaozaclaw["SettingsPage_Settings.Text"]);
+        Assert.Equal("关于", xiaozaclaw["SettingsPage_About.Text"]);
+        Assert.DoesNotContain(
+            xiaozaclaw.Values,
+            static value => value.Contains("OpenClaw", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void XiaozaclawBuild_UsesOnlyDedicatedChinesePriResources()
+    {
+        var project = Read("src", "OpenClaw.Tray.WinUI", "OpenClaw.Tray.WinUI.csproj");
+        var props = Read("Directory.Build.props");
+        var bootstrap = Read("src", "OpenClaw.Tray.WinUI", "App.xaml.cs");
+
+        Assert.Contains("XiaozaclawStrings\\Resources.resw", project);
+        Assert.Contains("<DefaultLanguage>zh-CN</DefaultLanguage>", project);
+        Assert.DoesNotContain("<Link>Strings\\zh-cn\\Resources.resw</Link>", project);
+        Assert.Contains("Strings\\**\\*.resw;XiaozaclawStrings\\**\\*.resw", props);
+        Assert.Contains("LocalizationBootstrap.Configure(AppIdentity.IsXiaozaClaw)", bootstrap);
+    }
+
+    [Fact]
+    public void SetupWizard_AppliesChineseProductLocalization()
+    {
+        var window = Read("src", "OpenClaw.SetupEngine.UI", "SetupWindow.xaml.cs");
+        var localizer = Read("src", "OpenClaw.SetupEngine.UI", "SetupTextLocalizer.cs");
+
+        Assert.Contains("RootFrame.Navigated += ApplyProductLocalization", window);
+        Assert.Contains("SetupTextLocalizer.Attach(element, Branding, _config)", window);
+        Assert.Contains("[\"Set up the WSL gateway\"] = \"设置 WSL 网关\"", localizer);
+        Assert.Contains("[\"OpenClaw onboard\"] = \"xiaozaclaw 配置\"", localizer);
+        Assert.Contains(".Replace(\"OpenClaw\", productName", localizer);
+        Assert.Contains("config?.GatewayPort is > 0", localizer);
+        Assert.Contains("root.Loaded += loaded", localizer);
+        Assert.DoesNotContain("root.LayoutUpdated +=", localizer);
+    }
+
+    [Fact]
+    public void Installer_UsesChineseLanguageAndShortcuts()
+    {
+        var installer = Read("installer.iss");
+
+        Assert.Contains("MessagesFile: \"installer\\third-party\\ChineseSimplified.isl\"", installer);
+        Assert.Contains("#define MyAppName \"xiaozaclaw\"", installer);
+        Assert.Contains("MIT License", Read(
+            "installer", "third-party", "LICENSE.Inno-Setup-Chinese-Simplified-Translation.txt"));
+        Assert.Contains("#define MyGatewayShortcut \"xiaozaclaw 网关设置\"", installer);
+        Assert.Contains("#define MySettingsShortcut \"xiaozaclaw 设置\"", installer);
+        Assert.Contains("#define MyChatShortcut \"xiaozaclaw 对话\"", installer);
+        Assert.Contains("#define MyCheckUpdatesShortcut \"检查更新\"", installer);
+        Assert.Contains("#define MyStartupTaskDescription \"Windows 启动时运行 xiaozaclaw\"", installer);
+    }
+
+    [Fact]
+    public void MainWindow_DoesNotFlashEnglishStatusOrAboutName()
+    {
+        var hub = Read("src", "OpenClaw.Tray.WinUI", "Windows", "HubWindow.xaml");
+        var settings = Read("src", "OpenClaw.Tray.WinUI", "Pages", "SettingsPage.xaml");
+
+        Assert.DoesNotContain("StatusPillText\" Text=\"Disconnected", hub);
+        Assert.Contains("x:Uid=\"TitleText\"", settings);
+    }
+
+    private static IReadOnlyDictionary<string, string> ReadResources(params string[] pathParts)
+    {
+        var document = System.Xml.Linq.XDocument.Parse(Read(pathParts));
+        return document.Root!
+            .Elements("data")
+            .ToDictionary(
+                static element => element.Attribute("name")!.Value,
+                static element => element.Element("value")?.Value ?? string.Empty,
+                StringComparer.Ordinal);
+    }
 }

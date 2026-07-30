@@ -923,6 +923,7 @@ public sealed partial class SessionsPage : Page
 public class SessionViewModel
 {
     public string Key { get; set; } = "";
+    public string OpenChatAutomationId => $"SessionOpenChat:{Key}";
     public string DisplayName { get; set; } = "";
     public string AgeText { get; set; } = "";
     public string DetailLine { get; set; } = "";

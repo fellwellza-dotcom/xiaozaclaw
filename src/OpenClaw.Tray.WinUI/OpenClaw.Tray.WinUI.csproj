@@ -25,6 +25,7 @@
     <AssemblyTitle>xiaozaclaw</AssemblyTitle>
     <FileDescription>xiaozaclaw</FileDescription>
     <Product>xiaozaclaw</Product>
+    <DefaultLanguage>zh-CN</DefaultLanguage>
   </PropertyGroup>
 
   <!-- Dev build identity: allows side-by-side installation with Release.
@@ -39,6 +40,13 @@
   <PropertyGroup Condition="'$(DevBuild)' != 'true' and '$(XiaozaBuild)' != 'true'">
     <AppIdentityMarker>release</AppIdentityMarker>
   </PropertyGroup>
+
+  <!-- The branded build ships a dedicated Simplified Chinese resource set.
+       Keep the upstream locale files untouched so protocol/CLI compatibility
+       work can continue to rebase cleanly. -->
+  <ItemGroup Condition="'$(XiaozaBuild)' == 'true'">
+    <PRIResource Include="XiaozaclawStrings\Resources.resw" />
+  </ItemGroup>
 
   <!-- Map $(Platform) to $(RuntimeIdentifier) so self-contained WinUI F5/debug produces a launchable EXE. -->
   <PropertyGroup Condition="'$(RuntimeIdentifier)' == '' and '$(Platform)' == 'x64'">

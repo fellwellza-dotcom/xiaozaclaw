@@ -128,7 +128,7 @@
                     </Button.Resources>
                     <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
                         <Ellipse x:Name="StatusPillDot" Width="10" Height="10" VerticalAlignment="Center" Fill="Gray"/>
-                        <TextBlock x:Name="StatusPillText" Text="Disconnected"
+                        <TextBlock x:Name="StatusPillText" Text=""
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    VerticalAlignment="Center"/>
                         <FontIcon Glyph="&#xE70D;" FontSize="8" VerticalAlignment="Center"
@@ -418,6 +418,10 @@
             </NavigationView.Resources>
 
             <NavigationView.MenuItems>
+                <NavigationViewItem x:Name="NavEnterpriseWorkbench" Tag="workbench" Content="企业工作台"
+                                    AutomationProperties.Name="企业工作台">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE8F1;"/></NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem x:Uid="HubWindow_NavigationViewItem_82" x:Name="NavChat" Tag="chat" Content="Chat">
                     <NavigationViewItem.Icon><ImageIcon Source="{StaticResource Chat_Icon}" AutomationProperties.AccessibilityView="Raw"/></NavigationViewItem.Icon>
                 </NavigationViewItem>

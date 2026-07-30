@@ -49,6 +49,14 @@ internal static class WslInstallSupport
     public static string UpdateInstructions
         => $"Update WSL from the Microsoft Store page ({UpdateUrl}), then retry setup.";
 
+    public static string ManualPlatformEnableInstructions(int exitCode)
+        => $"Windows could not complete the WSL platform installation (exit code {exitCode}). "
+            + "No xiaozaclaw WSL distribution was created, and existing WSL distributions were not removed. "
+            + "Open Windows PowerShell as Administrator and run:\n"
+            + "dism.exe /online /Enable-Feature /FeatureName:Microsoft-Windows-Subsystem-Linux /All /NoRestart\n"
+            + "dism.exe /online /Enable-Feature /FeatureName:VirtualMachinePlatform /All /NoRestart\n"
+            + "Restart Windows, then run setup again.";
+
     public static IReadOnlyList<string> ParseQuietDistroList(string output)
         => Normalize(output)
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
@@ -598,7 +606,7 @@ public sealed class PreflightWslStep : SetupStep
                 return StepResult.Terminal("WSL platform install requires a restart. Reboot Windows, then run setup again.");
 
             if (process.ExitCode != 0)
-                return StepResult.Fail($"WSL platform install failed with exit code {process.ExitCode}.");
+                return StepResult.Terminal(WslInstallSupport.ManualPlatformEnableInstructions(process.ExitCode));
 
             var probe = await ctx.Commands.RunAsync(WslConstants.WslExePath, ["--version"], TimeSpan.FromSeconds(5), ct: ct);
             if (probe.ExitCode != 0 || LooksUnavailable(probe))

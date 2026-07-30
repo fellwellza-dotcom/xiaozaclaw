@@ -20,6 +20,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <ProjectReference Include="..\..\src\OpenClaw.Shared\OpenClaw.Shared.csproj" />
     <ProjectReference Include="..\..\src\OpenClaw.Connection\OpenClaw.Connection.csproj" />
+    <ProjectReference Include="..\OpenClaw.TestSupport\OpenClaw.TestSupport.csproj" />
     <!-- Compile only the model-layer files directly so the tests can remain
          pure net10.0 while the tray app owns the native WinUI surface. -->
     <Compile Include="..\..\src\OpenClaw.Chat\ChatModels.cs" Link="Chat\ChatModels.cs" />
@@ -59,6 +60,7 @@
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Services\DiagnosticsLogTailReader.cs" Link="Services\DiagnosticsLogTailReader.cs" />
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Services\DiagnosticsBundleBuilder.cs" Link="Services\DiagnosticsBundleBuilder.cs" />
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Services\SettingsManager.cs" Link="Services\SettingsManager.cs" />
+    <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Services\EnterpriseWorkspaceStore.cs" Link="Services\EnterpriseWorkspaceStore.cs" />
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Services\OpenTelemetryEndpointProtocol.cs" Link="Services\OpenTelemetryEndpointProtocol.cs" />
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Services\OpenTelemetryEndpointOptions.cs" Link="Services\OpenTelemetryEndpointOptions.cs" />
     <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Services\OpenTelemetryLogPolicy.cs" Link="Services\OpenTelemetryLogPolicy.cs" />
@@ -128,6 +130,7 @@
     <Compile Include="..\..\src\OpenClaw.SetupEngine.UI\WizardConsoleTail.cs" Link="WizardConsoleTail.cs" />
     <Compile Include="..\..\src\OpenClaw.SetupEngine.UI\WizardPayloadHelpers.cs" Link="WizardPayloadHelpers.cs" />
     <Compile Include="..\..\src\OpenClaw.SetupEngine.UI\SetupBranding.cs" Link="SetupBranding.cs" />
+    <Compile Include="..\..\src\OpenClaw.Tray.WinUI\Helpers\XiaozaLanguagePolicy.cs" Link="XiaozaLanguagePolicy.cs" />
   </ItemGroup>
 
   <!-- Phase 2 presentation seam: WinUI-free DI + navigation core, hand-linked so it
