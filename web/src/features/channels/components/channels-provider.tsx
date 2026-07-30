@@ -52,6 +52,8 @@ type UpstreamUpdateState = ReturnType<typeof useChannelUpstreamUpdates>
 type ChannelsContextType = {
   open: DialogType
   setOpen: (open: DialogType) => void
+  beginChannelCreate: (type: number) => void
+  createChannelType: number
   currentRow: Channel | null
   setCurrentRow: (row: Channel | null) => void
   currentTag: string | null
@@ -81,6 +83,7 @@ const ChannelsContext = createContext<ChannelsContextType | undefined>(
 
 export function ChannelsProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState<DialogType>(null)
+  const [createChannelType, setCreateChannelType] = useState(1)
   const [currentRow, setCurrentRow] = useState<Channel | null>(null)
   const [currentTag, setCurrentTag] = useState<string | null>(null)
   const [enableTagMode, setEnableTagMode] = useState(() => {
@@ -97,6 +100,11 @@ export function ChannelsProvider({ children }: { children: React.ReactNode }) {
     await queryClient.invalidateQueries({ queryKey: channelsQueryKeys.all })
   }, [queryClient])
   const upstream = useChannelUpstreamUpdates(refreshChannels)
+  const beginChannelCreate = useCallback((type: number) => {
+    setCurrentRow(null)
+    setCreateChannelType(type)
+    setOpen('create-channel')
+  }, [])
 
   // useState setters are stable, so the context value only needs to change when
   // an actual state value changes. Memoizing avoids handing every consumer
@@ -105,6 +113,8 @@ export function ChannelsProvider({ children }: { children: React.ReactNode }) {
     () => ({
       open,
       setOpen,
+      beginChannelCreate,
+      createChannelType,
       currentRow,
       setCurrentRow,
       currentTag,
@@ -121,6 +131,8 @@ export function ChannelsProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       open,
+      beginChannelCreate,
+      createChannelType,
       currentRow,
       currentTag,
       enableTagMode,
